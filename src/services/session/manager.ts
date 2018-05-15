@@ -1,7 +1,6 @@
 import { randomBytes } from "crypto";
-import { recover } from "secp256k1";
 import { injectable } from "inversify";
-import { publicKeyToAddress, bufferToHex } from "../../utils";
+import { bufferToHex, recoverAddress } from "../../utils";
 
 export interface ISessionManager {
   stats: {
@@ -84,8 +83,7 @@ export class SessionManager implements ISessionManager {
       const hash = this.connHashMap.get(connId);
 
       try {
-        const publicKey = recover(hash, signature, recovery, false);
-        const address = publicKeyToAddress(publicKey);
+        const address = recoverAddress(hash, signature, recovery);
 
         if (!this.addressConnMap.has(address)) {
           this.connAddressMap.set(connId, address);
