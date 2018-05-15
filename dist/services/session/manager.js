@@ -23,7 +23,7 @@ let SessionManager = class SessionManager {
         };
         this.connHashMap = new Map();
         this.connAddressMap = new Map();
-        this.addressConnMap = new Map();
+        this.addressConnIdsMap = new Map();
         this.hashAddressMap = new Map();
     }
     /**
@@ -46,7 +46,15 @@ let SessionManager = class SessionManager {
             const hash = this.connHashMap.get(connId);
             const address = this.connAddressMap.get(connId);
             this.connAddressMap.delete(connId);
-            this.addressConnMap.delete(address);
+            const addressConnIds = this.addressConnIdsMap
+                .get(address)
+                .filter((item) => item !== connId);
+            if (addressConnIds.length) {
+                this.addressConnIdsMap.set(address, addressConnIds);
+            }
+            else {
+                this.addressConnIdsMap.delete(address);
+            }
             this.hashAddressMap.delete(utils_1.bufferToHex(hash));
             --this.stats.verified;
         }
@@ -58,25 +66,27 @@ let SessionManager = class SessionManager {
      * @param {number} connId
      * @param {Buffer} signature
      * @param {number} recovery
-     * @returns {boolean}
+     * @returns {string}
      */
     verify(connId, signature, recovery) {
-        let result = false;
+        let result = null;
         if (this.connHashMap.has(connId) &&
             !this.connAddressMap.has(connId)) {
             const hash = this.connHashMap.get(connId);
             try {
                 const address = utils_1.recoverAddress(hash, signature, recovery);
-                if (!this.addressConnMap.has(address)) {
+                const addressConnIds = this.getAddressConnectionIds(address);
+                if (addressConnIds.indexOf(connId) === -1) {
+                    addressConnIds.push(connId);
                     this.connAddressMap.set(connId, address);
-                    this.addressConnMap.set(address, connId);
+                    this.addressConnIdsMap.set(address, addressConnIds);
                     this.hashAddressMap.set(utils_1.bufferToHex(hash), address);
                     ++this.stats.verified;
-                    result = true;
+                    result = address;
                 }
             }
             catch (err) {
-                result = false;
+                result = null;
             }
         }
         return result;
@@ -86,8 +96,8 @@ let SessionManager = class SessionManager {
      * @param {string} address
      * @returns {number}
      */
-    getAddressConnectionId(address) {
-        return this.addressConnMap.get(address) || null;
+    getAddressConnectionIds(address) {
+        return this.addressConnIdsMap.get(address) || [];
     }
     /**
      * gets hash address

@@ -6,8 +6,8 @@ export interface ISessionManager {
     };
     create(connId: number): Buffer;
     destroy(connId: number): void;
-    verify(connId: number, signature: Buffer, recovery: number): boolean;
-    getAddressConnectionId(address: string): number;
+    verify(connId: number, signature: Buffer, recovery: number): string;
+    getAddressConnectionIds(address: string): number[];
     getHashAddress(hash: string): string;
     getAllConnectionIds(): number[];
 }
@@ -21,7 +21,7 @@ export declare class SessionManager implements ISessionManager {
     };
     protected connHashMap: Map<number, Buffer>;
     protected connAddressMap: Map<number, string>;
-    protected addressConnMap: Map<string, number>;
+    protected addressConnIdsMap: Map<string, number[]>;
     protected hashAddressMap: Map<string, string>;
     /**
      * creates session
@@ -39,15 +39,15 @@ export declare class SessionManager implements ISessionManager {
      * @param {number} connId
      * @param {Buffer} signature
      * @param {number} recovery
-     * @returns {boolean}
+     * @returns {string}
      */
-    verify(connId: number, signature: Buffer, recovery: number): boolean;
+    verify(connId: number, signature: Buffer, recovery: number): string;
     /**
      * gets address connection id
      * @param {string} address
      * @returns {number}
      */
-    getAddressConnectionId(address: string): number;
+    getAddressConnectionIds(address: string): number[];
     /**
      * gets hash address
      * @param {string} hash
