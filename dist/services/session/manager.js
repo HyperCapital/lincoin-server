@@ -7,7 +7,6 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const crypto_1 = require("crypto");
-const secp256k1_1 = require("secp256k1");
 const inversify_1 = require("inversify");
 const utils_1 = require("../../utils");
 /**
@@ -67,8 +66,7 @@ let SessionManager = class SessionManager {
             !this.connAddressMap.has(connId)) {
             const hash = this.connHashMap.get(connId);
             try {
-                const publicKey = secp256k1_1.recover(hash, signature, recovery, false);
-                const address = utils_1.publicKeyToAddress(publicKey);
+                const address = utils_1.recoverAddress(hash, signature, recovery);
                 if (!this.addressConnMap.has(address)) {
                     this.connAddressMap.set(connId, address);
                     this.addressConnMap.set(address, connId);
