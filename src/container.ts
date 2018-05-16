@@ -24,6 +24,7 @@ export interface IContainer extends interfaces.Container {
   logger: LoggerInstance;
   httpServer: HttpServer;
   wsServer: WsServer;
+  setup(config: IConfig): void;
   bindToService(id: string, Service: { new(...args: any[]): any }): IContainer;
   bindToConstant(id: string, value: any): IContainer;
   setConnectionControllers(...Controllers: Array<{ new(): IConnectionController }>): IContainer;
@@ -48,11 +49,18 @@ export class Container extends BaseContainer implements IContainer {
     return this.get(ConstantNames.WsServer);
   }
 
-  constructor(config: IConfig) {
+  constructor(options: interfaces.ContainerOptions = {}) {
     super({
       defaultScope: "Singleton",
+      ...options,
     });
+  }
 
+  /**
+   * setup
+   * @param {IConfig} config
+   */
+  public setup(config: IConfig): void {
     // constants
     this.bind(ConstantNames.Config).toConstantValue(config);
     this.bind(ConstantNames.Logger).toConstantValue(new Logger({
