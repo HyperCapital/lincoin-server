@@ -25,8 +25,9 @@ class Container extends inversify_1.Container {
     /**
      * setup
      * @param {IConfig} config
+     * @returns {this}
      */
-    setup(config) {
+    setup(config = {}) {
         // constants
         this.bind(constants_1.ConstantNames.Config).toConstantValue(config);
         this.bind(constants_1.ConstantNames.Logger).toConstantValue(new winston_1.Logger(Object.assign({ level: "debug", exitOnError: false, transports: [
@@ -42,6 +43,7 @@ class Container extends inversify_1.Container {
         this.bind(constants_1.ServiceNames.NetworkManager).to(services_1.NetworkManager);
         this.bind(constants_1.ServiceNames.RequestHandler).to(services_1.RequestHandler);
         this.bind(constants_1.ServiceNames.SessionManager).to(services_1.SessionManager);
+        return this;
     }
     /**
      * binds name to service

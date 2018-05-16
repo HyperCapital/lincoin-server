@@ -24,7 +24,7 @@ export interface IContainer extends interfaces.Container {
   logger: LoggerInstance;
   httpServer: HttpServer;
   wsServer: WsServer;
-  setup(config: IConfig): void;
+  setup(config?: IConfig): IContainer;
   bindToService(id: string, Service: { new(...args: any[]): any }): IContainer;
   bindToConstant(id: string, value: any): IContainer;
   setConnectionControllers(...Controllers: Array<{ new(): IConnectionController }>): IContainer;
@@ -59,8 +59,9 @@ export class Container extends BaseContainer implements IContainer {
   /**
    * setup
    * @param {IConfig} config
+   * @returns {this}
    */
-  public setup(config: IConfig): void {
+  public setup(config: IConfig = {}): this {
     // constants
     this.bind(ConstantNames.Config).toConstantValue(config);
     this.bind(ConstantNames.Logger).toConstantValue(new Logger({
@@ -88,6 +89,8 @@ export class Container extends BaseContainer implements IContainer {
     this.bind(ServiceNames.NetworkManager).to(NetworkManager);
     this.bind(ServiceNames.RequestHandler).to(RequestHandler);
     this.bind(ServiceNames.SessionManager).to(SessionManager);
+
+    return this;
   }
 
   /**
