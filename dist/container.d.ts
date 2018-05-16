@@ -11,6 +11,7 @@ export interface IContainer extends interfaces.Container {
     logger: LoggerInstance;
     httpServer: HttpServer;
     wsServer: WsServer;
+    setup(config: IConfig): void;
     bindToService(id: string, Service: {
         new (...args: any[]): any;
     }): IContainer;
@@ -32,7 +33,12 @@ export declare class Container extends BaseContainer implements IContainer {
     readonly logger: LoggerInstance;
     readonly httpServer: HttpServer;
     readonly wsServer: WsServer;
-    constructor(config: IConfig);
+    constructor(options?: interfaces.ContainerOptions);
+    /**
+     * setup
+     * @param {IConfig} config
+     */
+    setup(config: IConfig): void;
     /**
      * binds name to service
      * @param {string} name

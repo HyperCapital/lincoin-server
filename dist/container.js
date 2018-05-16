@@ -19,10 +19,14 @@ class Container extends inversify_1.Container {
     get wsServer() {
         return this.get(constants_1.ConstantNames.WsServer);
     }
-    constructor(config) {
-        super({
-            defaultScope: "Singleton",
-        });
+    constructor(options = {}) {
+        super(Object.assign({ defaultScope: "Singleton" }, options));
+    }
+    /**
+     * setup
+     * @param {IConfig} config
+     */
+    setup(config) {
         // constants
         this.bind(constants_1.ConstantNames.Config).toConstantValue(config);
         this.bind(constants_1.ConstantNames.Logger).toConstantValue(new winston_1.Logger(Object.assign({ level: "debug", exitOnError: false, transports: [
