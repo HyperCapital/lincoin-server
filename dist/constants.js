@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.DEFAULT_ID = "default";
 var ConstantNames;
 (function (ConstantNames) {
     ConstantNames["Config"] = "internal/constant/CONFIG";

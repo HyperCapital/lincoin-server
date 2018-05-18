@@ -1,8 +1,8 @@
 import { injectable, inject } from "inversify";
 import * as Web3 from "web3";
-import fetch from "node-fetch";
 import { ConstantNames } from "../../constants";
 import { IConfig } from "../../config";
+import { createWeb3Provider } from "./utils";
 
 export interface INetworkManager {
   getWeb3(id: number): Web3.IWeb3;
@@ -13,30 +13,13 @@ export interface INetworkManager {
  */
 @injectable()
 export class NetworkManager implements INetworkManager {
-  private static createWeb3Provider(endpoint): Web3.IProvider {
-    return {
-      send: () => {
-        throw new Error("sync requests are not supported");
-      },
-      sendAsync: (payload, callback) => {
-        fetch(endpoint, {
-          method: "POST",
-          body: JSON.stringify(payload),
-        })
-          .then((res) => res.json())
-          .then((data) => callback(null, data))
-          .catch((err) => callback(err, null));
-      },
-      isConnected: () => true,
-    };
-  }
 
   private web3Instances = new Map<number, Web3.IWeb3>();
 
   constructor(@inject(ConstantNames.Config) config: IConfig) {
     const networks = config.networks || [];
     for (const { id, endpoint } of networks) {
-      this.web3Instances.set(id, new Web3(NetworkManager.createWeb3Provider(endpoint)));
+      this.web3Instances.set(id, new Web3(createWeb3Provider(endpoint)));
     }
   }
 

@@ -1,3 +1,5 @@
+export const DEFAULT_ID = "default";
+
 export enum ConstantNames {
   Config = "internal/constant/CONFIG",
   Logger = "internal/constant/LOGGER",

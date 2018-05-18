@@ -4,7 +4,7 @@ import { ConnectionEventHandlerTypes } from "./constants";
 export interface IConnection {
   id: number;
   socket: WebSocket;
-  isAlive: boolean;
+  muted: boolean;
 }
 
 export interface IConnectionEventHandler<T = any> {

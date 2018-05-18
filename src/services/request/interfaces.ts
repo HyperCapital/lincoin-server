@@ -6,7 +6,7 @@ export interface IRequestController {
 }
 
 export interface IHttpRequest extends Request {
-  authenticate(): string;
+  authenticate(sendError?: boolean): string;
 }
 
 export interface IHttpResponse extends Response {

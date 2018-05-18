@@ -1,18 +1,19 @@
 import { randomBytes } from "crypto";
 import { injectable } from "inversify";
 import { bufferToHex, recoverAddress } from "../../utils";
+import { IConnection } from "../connection";
 
 export interface ISessionManager {
   stats: {
     total: number;
     verified: number;
   };
-  create(connId: number): Buffer;
-  destroy(connId: number): void;
-  verify(connId: number, signature: Buffer, recovery: number): string;
-  getAddressConnectionIds(address: string): number[];
+  create(conn: IConnection): Buffer;
+  destroy(conn: IConnection): void;
+  verify(conn: IConnection, signature: Buffer, recovery: number): string;
   getHashAddress(hash: string): string;
-  getAllConnectionIds(): number[];
+  getAddressConnections(address: string): Array<Partial<IConnection>>;
+  getAllConnections(): Array<Partial<IConnection>>;
 }
 
 /**
@@ -25,20 +26,20 @@ export class SessionManager implements ISessionManager {
     verified: 0,
   };
 
-  protected connHashMap = new Map<number, Buffer>();
-  protected connAddressMap = new Map<number, string>();
+  protected connIdHashMap = new Map<number, Buffer>();
+  protected connIdAddressMap = new Map<number, string>();
   protected addressConnIdsMap = new Map<string, number[]>();
   protected hashAddressMap = new Map<string, string>();
 
   /**
    * creates session
-   * @param {number} connId
+   * @param {IConnection} conn
    * @returns {Buffer}
    */
-  public create(connId: number): Buffer {
+  public create({ id }: IConnection): Buffer {
     const result = randomBytes(32);
 
-    this.connHashMap.set(connId, result);
+    this.connIdHashMap.set(id, result);
 
     ++this.stats.total;
 
@@ -47,18 +48,18 @@ export class SessionManager implements ISessionManager {
 
   /**
    * destroys session
-   * @param {number} connId
+   * @param {IConnection} conn
    */
-  public destroy(connId: number): void {
-    if (this.connAddressMap.has(connId)) {
-      const hash = this.connHashMap.get(connId);
-      const address = this.connAddressMap.get(connId);
+  public destroy({ id }: IConnection): void {
+    if (this.connIdAddressMap.has(id)) {
+      const hash = this.connIdHashMap.get(id);
+      const address = this.connIdAddressMap.get(id);
 
-      this.connAddressMap.delete(connId);
+      this.connIdAddressMap.delete(id);
 
       const addressConnIds = this.addressConnIdsMap
         .get(address)
-        .filter((item) => item !== connId);
+        .filter((item) => item !== id);
 
       if (addressConnIds.length) {
         this.addressConnIdsMap.set(address, addressConnIds);
@@ -71,35 +72,35 @@ export class SessionManager implements ISessionManager {
       --this.stats.verified;
     }
 
-    this.connHashMap.delete(connId);
+    this.connIdHashMap.delete(id);
 
     --this.stats.total;
   }
 
   /**
    * verifies session
-   * @param {number} connId
+   * @param {IConnection} conn
    * @param {Buffer} signature
    * @param {number} recovery
    * @returns {string}
    */
-  public verify(connId: number, signature: Buffer, recovery: number): string {
+  public verify({ id }: IConnection, signature: Buffer, recovery: number): string {
     let result: string = null;
 
     if (
-      this.connHashMap.has(connId) &&
-      !this.connAddressMap.has(connId)
+      this.connIdHashMap.has(id) &&
+      !this.connIdAddressMap.has(id)
     ) {
-      const hash = this.connHashMap.get(connId);
+      const hash = this.connIdHashMap.get(id);
 
       try {
         const address = recoverAddress(hash, signature, recovery);
-        const addressConnIds = this.getAddressConnectionIds(address);
+        const addressConnIds = this.addressConnIdsMap.get(address) || [];
 
-        if (addressConnIds.indexOf(connId) === -1) {
-          addressConnIds.push(connId);
+        if (addressConnIds.indexOf(id) === -1) {
+          addressConnIds.push(id);
 
-          this.connAddressMap.set(connId, address);
+          this.connIdAddressMap.set(id, address);
           this.addressConnIdsMap.set(address, addressConnIds);
           this.hashAddressMap.set(bufferToHex(hash), address);
 
@@ -116,15 +117,6 @@ export class SessionManager implements ISessionManager {
   }
 
   /**
-   * gets address connection id
-   * @param {string} address
-   * @returns {number}
-   */
-  public getAddressConnectionIds(address: string): number[] {
-    return this.addressConnIdsMap.get(address) || [];
-  }
-
-  /**
    * gets hash address
    * @param {string} hash
    * @returns {string}
@@ -134,12 +126,25 @@ export class SessionManager implements ISessionManager {
   }
 
   /**
-   * gets all connection ids
-   * @returns {number[]}
+   * gets address connection id
+   * @param {string} address
+   * @returns {Array<Partial<IConnection>>}
    */
-  public getAllConnectionIds(): number[] {
+  public getAddressConnections(address: string): Array<Partial<IConnection>> {
+    return (this.addressConnIdsMap.get(address) || []).map((id) => ({
+      id,
+    }));
+  }
+
+  /**
+   * gets all connection ids
+   * @returns {Array<Partial<IConnection>>}
+   */
+  public getAllConnections(): Array<Partial<IConnection>> {
     return [
-      ...this.connAddressMap.keys(),
-    ];
+      ...this.connIdAddressMap.keys(),
+    ].map((id) => ({
+      id,
+    }));
   }
 }

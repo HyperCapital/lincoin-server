@@ -3,7 +3,7 @@ import { injectable, inject, multiInject, optional } from "inversify";
 import { LoggerInstance } from "winston";
 import { ConstantNames, ServiceNames } from "../../constants";
 import { IConnectionManager } from "./manager";
-import { IConnectionController, IConnectionEventHandler } from "./interfaces";
+import { IConnection, IConnectionController, IConnectionEventHandler } from "./interfaces";
 import { ConnectionEventHandlerTypes } from "./constants";
 
 /**
@@ -31,32 +31,32 @@ export class ConnectionHandler {
     }
 
     wsServer.on("connection", (socket) => {
-      const connId = manager.create(socket);
+      const conn = manager.create(socket);
 
-      this.openedHandler(connId)
-        .then(() => logger.debug("connection:opened", { connId }))
+      this.openedHandler(conn)
+        .then(() => logger.debug("connection:opened", conn.id))
         .catch((err) => logger.error("connection:open", err));
 
       socket.on("close", () => {
-        this.closedHandler(connId)
-          .then(() => logger.debug("connection:closed", { connId }))
+        this.closedHandler(conn)
+          .then(() => logger.debug("connection:closed", conn.id))
           .catch((err) => logger.error("connection:close", err));
 
-        manager.terminate(connId);
+        manager.terminate(conn);
       });
 
       socket.on("message", (data: Buffer) => {
-        this.messageHandler(connId, data)
-          .then(() => logger.debug("connection:message", { connId }, data.toString("hex")))
+        this.messageHandler(conn, data)
+          .then(() => logger.debug("connection:message", conn.id, data.toString("hex")))
           .catch((err) => logger.error("connection:message", err));
       });
     });
   }
 
-  private async openedHandler(connId: number): Promise<void> {
+  private async openedHandler(conn: IConnection): Promise<void> {
     for (const eventHandler of this.eventHandlers) {
       if (eventHandler.type === ConnectionEventHandlerTypes.Opened) {
-        const promise: any = eventHandler.handler(connId);
+        const promise: any = eventHandler.handler(conn);
 
         if (promise instanceof Promise) {
           await promise;
@@ -65,10 +65,10 @@ export class ConnectionHandler {
     }
   }
 
-  private async closedHandler(connId: number): Promise<void> {
+  private async closedHandler(conn: IConnection): Promise<void> {
     for (const eventHandler of this.eventHandlers) {
       if (eventHandler.type === ConnectionEventHandlerTypes.Closed) {
-        const promise: any = eventHandler.handler(connId);
+        const promise: any = eventHandler.handler(conn);
 
         if (promise instanceof Promise) {
           await promise;
@@ -77,7 +77,7 @@ export class ConnectionHandler {
     }
   }
 
-  private async messageHandler(connId: number, payload: Buffer): Promise<void> {
+  private async messageHandler(conn: IConnection, payload: Buffer): Promise<void> {
     if (!payload.length) {
       return;
     }
@@ -89,7 +89,7 @@ export class ConnectionHandler {
         eventHandler.type === ConnectionEventHandlerTypes.Message &&
         eventHandler.params.type === type
       ) {
-        const promise: any = eventHandler.handler(connId, payload.slice(1));
+        const promise: any = eventHandler.handler(conn, payload.slice(1));
 
         if (promise instanceof Promise) {
           await promise;

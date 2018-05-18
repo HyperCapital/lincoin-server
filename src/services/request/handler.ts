@@ -54,7 +54,7 @@ export class RequestHandler {
 
   private middleware(req: IHttpRequest, res: IHttpResponse, next: express.NextFunction) {
     Object.assign(req, {
-      authenticate: () => {
+      authenticate: (sendError: boolean = true) => {
         let result: string = null;
         const hash = req.headers.authorization;
         if (hash && this.sessionManager) {
@@ -63,7 +63,7 @@ export class RequestHandler {
           );
         }
 
-        if (!result) {
+        if (!result && sendError) {
           res.sendError(403);
         }
 
@@ -99,11 +99,13 @@ export class RequestHandler {
   private status404Handler(req: IHttpRequest, res: IHttpResponse) {
     res.sendError(404);
 
-    const { method, url } = req;
+    const { method, url, query, params } = req;
 
     this.logger.debug("request:handler:404", {
       method,
       url,
+      query,
+      params,
     });
   }
 

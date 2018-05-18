@@ -1,7 +1,7 @@
 import { injectable, inject, multiInject, optional } from "inversify";
 import * as Web3 from "web3";
 import { LoggerInstance } from "winston";
-import { ConstantNames, ServiceNames } from "../../constants";
+import { ConstantNames, ServiceNames, DEFAULT_ID } from "../../constants";
 import { IConfig } from "../../config";
 import { INetworkManager } from "../network";
 import { IContractController, IContractEventHandler } from "./interfaces";
@@ -21,7 +21,7 @@ export class ContractHandler {
     @multiInject(ServiceNames.ContractController) @optional() controllers: IContractController[],
   ) {
     for (const { contract, eventHandlers } of controllers) {
-      const id = contract || "default";
+      const id = contract || DEFAULT_ID;
       this.eventHandlers[ id ] = [
         ...(this.eventHandlers[ id ] || []),
         ...eventHandlers,
@@ -34,7 +34,7 @@ export class ContractHandler {
         const { type, addresses, filter, additionalFilter } = options;
 
         if (!id) {
-          id = "default";
+          id = DEFAULT_ID;
         }
 
         if (!abi && type) {
