@@ -100,6 +100,14 @@ let SessionManager = class SessionManager {
         return this.hashAddressMap.get(hash) || null;
     }
     /**
+     * gets connection address
+     * @param {IConnection} conn
+     * @returns {string}
+     */
+    getConnectionAddress({ id }) {
+        return this.connIdAddressMap.get(id) || null;
+    }
+    /**
      * gets address connection id
      * @param {string} address
      * @returns {Array<Partial<IConnection>>}

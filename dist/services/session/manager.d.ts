@@ -9,6 +9,7 @@ export interface ISessionManager {
     destroy(conn: IConnection): void;
     verify(conn: IConnection, signature: Buffer, recovery: number): string;
     getHashAddress(hash: string): string;
+    getConnectionAddress(conn: IConnection): string;
     getAddressConnections(address: string): Array<Partial<IConnection>>;
     getAllConnections(exceptAddresses?: string[]): Array<Partial<IConnection>>;
 }
@@ -49,6 +50,12 @@ export declare class SessionManager implements ISessionManager {
      * @returns {string}
      */
     getHashAddress(hash: string): string;
+    /**
+     * gets connection address
+     * @param {IConnection} conn
+     * @returns {string}
+     */
+    getConnectionAddress({id}: IConnection): string;
     /**
      * gets address connection id
      * @param {string} address

@@ -12,6 +12,7 @@ export interface ISessionManager {
   destroy(conn: IConnection): void;
   verify(conn: IConnection, signature: Buffer, recovery: number): string;
   getHashAddress(hash: string): string;
+  getConnectionAddress(conn: IConnection): string;
   getAddressConnections(address: string): Array<Partial<IConnection>>;
   getAllConnections(exceptAddresses?: string[]): Array<Partial<IConnection>>;
 }
@@ -123,6 +124,15 @@ export class SessionManager implements ISessionManager {
    */
   public getHashAddress(hash: string): string {
     return this.hashAddressMap.get(hash) || null;
+  }
+
+  /**
+   * gets connection address
+   * @param {IConnection} conn
+   * @returns {string}
+   */
+  public getConnectionAddress({ id }: IConnection): string {
+    return this.connIdAddressMap.get(id) || null;
   }
 
   /**
