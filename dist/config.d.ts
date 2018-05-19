@@ -22,6 +22,9 @@ export interface IConfig {
             address: string;
         }>;
     }>;
+    httpServer?: {
+        port: number;
+    };
     logger?: LoggerOptions;
     networks?: Array<{
         id: number;

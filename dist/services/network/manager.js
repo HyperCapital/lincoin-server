@@ -14,35 +14,18 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const inversify_1 = require("inversify");
 const Web3 = require("web3");
-const node_fetch_1 = require("node-fetch");
 const constants_1 = require("../../constants");
+const utils_1 = require("./utils");
 /**
  * Network manager service
  */
-let NetworkManager = NetworkManager_1 = class NetworkManager {
+let NetworkManager = class NetworkManager {
     constructor(config) {
         this.web3Instances = new Map();
         const networks = config.networks || [];
         for (const { id, endpoint } of networks) {
-            this.web3Instances.set(id, new Web3(NetworkManager_1.createWeb3Provider(endpoint)));
+            this.web3Instances.set(id, new Web3(utils_1.createWeb3Provider(endpoint)));
         }
-    }
-    static createWeb3Provider(endpoint) {
-        return {
-            send: () => {
-                throw new Error("sync requests are not supported");
-            },
-            sendAsync: (payload, callback) => {
-                node_fetch_1.default(endpoint, {
-                    method: "POST",
-                    body: JSON.stringify(payload),
-                })
-                    .then((res) => res.json())
-                    .then((data) => callback(null, data))
-                    .catch((err) => callback(err, null));
-            },
-            isConnected: () => true,
-        };
     }
     /**
      * gets network web3 instance
@@ -53,10 +36,9 @@ let NetworkManager = NetworkManager_1 = class NetworkManager {
         return this.web3Instances.get(id) || null;
     }
 };
-NetworkManager = NetworkManager_1 = __decorate([
+NetworkManager = __decorate([
     inversify_1.injectable(),
     __param(0, inversify_1.inject(constants_1.ConstantNames.Config)),
     __metadata("design:paramtypes", [Object])
 ], NetworkManager);
 exports.NetworkManager = NetworkManager;
-var NetworkManager_1;

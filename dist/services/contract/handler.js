@@ -30,7 +30,7 @@ let ContractHandler = class ContractHandler {
     constructor(config, logger, networkManager, controllers) {
         this.eventHandlers = {};
         for (const { contract, eventHandlers } of controllers) {
-            const id = contract || "default";
+            const id = contract || constants_1.DEFAULT_ID;
             this.eventHandlers[id] = [
                 ...(this.eventHandlers[id] || []),
                 ...eventHandlers,
@@ -41,7 +41,7 @@ let ContractHandler = class ContractHandler {
                 let { id, abi } = options;
                 const { type, addresses, filter, additionalFilter } = options;
                 if (!id) {
-                    id = "default";
+                    id = constants_1.DEFAULT_ID;
                 }
                 if (!abi && type) {
                     abi = abis_1.default[type] || null;

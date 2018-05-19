@@ -1,15 +1,16 @@
 /// <reference types="node" />
+import { IConnection } from "../connection";
 export interface ISessionManager {
     stats: {
         total: number;
         verified: number;
     };
-    create(connId: number): Buffer;
-    destroy(connId: number): void;
-    verify(connId: number, signature: Buffer, recovery: number): string;
-    getAddressConnectionIds(address: string): number[];
+    create(conn: IConnection): Buffer;
+    destroy(conn: IConnection): void;
+    verify(conn: IConnection, signature: Buffer, recovery: number): string;
     getHashAddress(hash: string): string;
-    getAllConnectionIds(): number[];
+    getAddressConnections(address: string): Array<Partial<IConnection>>;
+    getAllConnections(): Array<Partial<IConnection>>;
 }
 /**
  * Session manager service
@@ -19,35 +20,29 @@ export declare class SessionManager implements ISessionManager {
         total: number;
         verified: number;
     };
-    protected connHashMap: Map<number, Buffer>;
-    protected connAddressMap: Map<number, string>;
+    protected connIdHashMap: Map<number, Buffer>;
+    protected connIdAddressMap: Map<number, string>;
     protected addressConnIdsMap: Map<string, number[]>;
     protected hashAddressMap: Map<string, string>;
     /**
      * creates session
-     * @param {number} connId
+     * @param {IConnection} conn
      * @returns {Buffer}
      */
-    create(connId: number): Buffer;
+    create({id}: IConnection): Buffer;
     /**
      * destroys session
-     * @param {number} connId
+     * @param {IConnection} conn
      */
-    destroy(connId: number): void;
+    destroy({id}: IConnection): void;
     /**
      * verifies session
-     * @param {number} connId
+     * @param {IConnection} conn
      * @param {Buffer} signature
      * @param {number} recovery
      * @returns {string}
      */
-    verify(connId: number, signature: Buffer, recovery: number): string;
-    /**
-     * gets address connection id
-     * @param {string} address
-     * @returns {number}
-     */
-    getAddressConnectionIds(address: string): number[];
+    verify({id}: IConnection, signature: Buffer, recovery: number): string;
     /**
      * gets hash address
      * @param {string} hash
@@ -55,8 +50,14 @@ export declare class SessionManager implements ISessionManager {
      */
     getHashAddress(hash: string): string;
     /**
-     * gets all connection ids
-     * @returns {number[]}
+     * gets address connection id
+     * @param {string} address
+     * @returns {Array<Partial<IConnection>>}
      */
-    getAllConnectionIds(): number[];
+    getAddressConnections(address: string): Array<Partial<IConnection>>;
+    /**
+     * gets all connection ids
+     * @returns {Array<Partial<IConnection>>}
+     */
+    getAllConnections(): Array<Partial<IConnection>>;
 }

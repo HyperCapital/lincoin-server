@@ -41,28 +41,28 @@ let ConnectionHandler = class ConnectionHandler {
             logger.error("connection", err);
         }
         wsServer.on("connection", (socket) => {
-            const connId = manager.create(socket);
-            this.openedHandler(connId)
-                .then(() => logger.debug("connection:opened", { connId }))
+            const conn = manager.create(socket);
+            this.openedHandler(conn)
+                .then(() => logger.debug("connection:opened", conn.id))
                 .catch((err) => logger.error("connection:open", err));
             socket.on("close", () => {
-                this.closedHandler(connId)
-                    .then(() => logger.debug("connection:closed", { connId }))
+                this.closedHandler(conn)
+                    .then(() => logger.debug("connection:closed", conn.id))
                     .catch((err) => logger.error("connection:close", err));
-                manager.terminate(connId);
+                manager.terminate(conn);
             });
             socket.on("message", (data) => {
-                this.messageHandler(connId, data)
-                    .then(() => logger.debug("connection:message", { connId }, data.toString("hex")))
+                this.messageHandler(conn, data)
+                    .then(() => logger.debug("connection:message", conn.id, data.toString("hex")))
                     .catch((err) => logger.error("connection:message", err));
             });
         });
     }
-    openedHandler(connId) {
+    openedHandler(conn) {
         return __awaiter(this, void 0, void 0, function* () {
             for (const eventHandler of this.eventHandlers) {
                 if (eventHandler.type === constants_2.ConnectionEventHandlerTypes.Opened) {
-                    const promise = eventHandler.handler(connId);
+                    const promise = eventHandler.handler(conn);
                     if (promise instanceof Promise) {
                         yield promise;
                     }
@@ -70,11 +70,11 @@ let ConnectionHandler = class ConnectionHandler {
             }
         });
     }
-    closedHandler(connId) {
+    closedHandler(conn) {
         return __awaiter(this, void 0, void 0, function* () {
             for (const eventHandler of this.eventHandlers) {
                 if (eventHandler.type === constants_2.ConnectionEventHandlerTypes.Closed) {
-                    const promise = eventHandler.handler(connId);
+                    const promise = eventHandler.handler(conn);
                     if (promise instanceof Promise) {
                         yield promise;
                     }
@@ -82,7 +82,7 @@ let ConnectionHandler = class ConnectionHandler {
             }
         });
     }
-    messageHandler(connId, payload) {
+    messageHandler(conn, payload) {
         return __awaiter(this, void 0, void 0, function* () {
             if (!payload.length) {
                 return;
@@ -91,7 +91,7 @@ let ConnectionHandler = class ConnectionHandler {
             for (const eventHandler of this.eventHandlers) {
                 if (eventHandler.type === constants_2.ConnectionEventHandlerTypes.Message &&
                     eventHandler.params.type === type) {
-                    const promise = eventHandler.handler(connId, payload.slice(1));
+                    const promise = eventHandler.handler(conn, payload.slice(1));
                     if (promise instanceof Promise) {
                         yield promise;
                     }

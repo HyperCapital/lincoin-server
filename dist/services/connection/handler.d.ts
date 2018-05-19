@@ -10,7 +10,7 @@ import { IConnectionController, IConnectionEventHandler } from "./interfaces";
 export declare class ConnectionHandler {
     protected readonly eventHandlers: IConnectionEventHandler[];
     constructor(wsServer: Server, logger: LoggerInstance, manager: IConnectionManager, controllers: IConnectionController[]);
-    private openedHandler(connId);
-    private closedHandler(connId);
-    private messageHandler(connId, payload);
+    private openedHandler(conn);
+    private closedHandler(conn);
+    private messageHandler(conn, payload);
 }

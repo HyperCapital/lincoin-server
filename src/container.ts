@@ -21,34 +21,19 @@ import {
 } from "./constants";
 
 export interface IContainer extends interfaces.Container {
-  logger: LoggerInstance;
-  httpServer: HttpServer;
-  wsServer: WsServer;
   setup(config?: IConfig): IContainer;
   bindToService(id: string, Service: { new(...args: any[]): any }): IContainer;
   bindToConstant(id: string, value: any): IContainer;
   setConnectionControllers(...Controllers: Array<{ new(): IConnectionController }>): IContainer;
   setContractControllers(...Controllers: Array<{ new(): IContractController }>): IContainer;
   setRequestControllers(...Controllers: Array<{ new(): IRequestController }>): IContainer;
+  start(): void;
 }
 
 /**
  * Container
  */
 export class Container extends BaseContainer implements IContainer {
-
-  public get logger(): LoggerInstance {
-    return this.get(ConstantNames.Logger);
-  }
-
-  public get httpServer(): HttpServer {
-    return this.get(ConstantNames.HttpServer);
-  }
-
-  public get wsServer(): WsServer {
-    return this.get(ConstantNames.WsServer);
-  }
-
   constructor(options: interfaces.ContainerOptions = {}) {
     super({
       defaultScope: "Singleton",
@@ -62,6 +47,7 @@ export class Container extends BaseContainer implements IContainer {
    * @returns {this}
    */
   public setup(config: IConfig = {}): this {
+
     // constants
     this.bind(ConstantNames.Config).toConstantValue(config);
     this.bind(ConstantNames.Logger).toConstantValue(new Logger({
@@ -72,12 +58,15 @@ export class Container extends BaseContainer implements IContainer {
       ],
       ...(config.logger || {}),
     }));
-    this.bind(ConstantNames.HttpServer).toConstantValue(new HttpServer(null));
+
+    const httpServer = new HttpServer(null);
+
+    this.bind(ConstantNames.HttpServer).toConstantValue(httpServer);
     this.bind(ConstantNames.WsServer).toConstantValue(new WsServer({
       clientTracking: false,
       maxPayload: 1024,
       path: "/",
-      server: this.httpServer,
+      server: httpServer,
       ...(config.wsServer || {}),
     }));
 
@@ -149,6 +138,27 @@ export class Container extends BaseContainer implements IContainer {
       this.bind(ServiceNames.RequestController).to(Controller);
     }
     return this.use(ServiceNames.RequestHandler);
+  }
+
+  /**
+   * starts
+   */
+  public start(): void {
+    const config = this.get<IConfig>(ConstantNames.Config);
+    const logger = this.get<LoggerInstance>(ConstantNames.Logger);
+    const httpServer = this.get<HttpServer>(ConstantNames.HttpServer);
+
+    httpServer
+      .listen(
+        (config.httpServer && config.httpServer.port) || 8080,
+        (err) => {
+          if (err) {
+            logger.error("httpServer", err);
+          } else {
+            logger.info("httpServer:listening", httpServer.address());
+          }
+        },
+      );
   }
 
   private use(name: string): this {

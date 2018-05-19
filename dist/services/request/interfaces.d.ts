@@ -5,7 +5,7 @@ export interface IRequestController {
     router: Router;
 }
 export interface IHttpRequest extends Request {
-    authenticate(): string;
+    authenticate(sendError?: boolean): string;
 }
 export interface IHttpResponse extends Response {
     sendError(code: number, data?: any): void;

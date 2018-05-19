@@ -5,122 +5,97 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
-var __metadata = (this && this.__metadata) || function (k, v) {
-    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
-};
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const inversify_1 = require("inversify");
-const constants_1 = require("../../constants");
 /**
  * Connection manager service
  */
 let ConnectionManager = class ConnectionManager {
-    constructor(config) {
+    /**
+     * Connection manager service
+     */
+    constructor() {
         this.stats = {
             total: 0,
+            muted: 0,
         };
         this.index = 0;
         this.connections = new Map();
-        const heartbeatInterval = (config.connection && config.connection.heartbeatInterval) || 15000;
-        setInterval(this.heartbeatHandler.bind(this), heartbeatInterval);
     }
     /**
      * creates connection
      * @param {WebSocket} socket
-     * @returns {number}
+     * @returns {IConnection}
      */
     create(socket) {
         ++this.stats.total;
         const id = ++this.index;
-        const connection = {
+        const result = {
             id,
             socket,
-            isAlive: true,
+            muted: false,
         };
-        socket.on("pong", this.pongHandler.bind(connection));
-        this.connections.set(id, connection);
-        return id;
+        this.connections.set(id, result);
+        return result;
     }
     /**
      * terminates connection
-     * @param {number} connId
+     * @param {Partial<IConnection>} conn
      */
-    terminate(connId) {
-        if (!this.exists(connId)) {
+    terminate({ id }) {
+        if (!this.exists({ id })) {
             return;
         }
+        const { socket, muted } = this.connections.get(id);
+        socket.terminate();
+        this.connections.delete(id);
         --this.stats.total;
-        this.connections
-            .get(connId)
-            .socket
-            .terminate();
-        this.connections
-            .delete(connId);
+        if (muted) {
+            --this.stats.muted;
+        }
     }
     /**
      * checks if connection exists
-     * @param {number} connId
+     * @param {Partial<IConnection>} conn
      * @returns {boolean}
      */
-    exists(connId) {
-        return this.connections.has(connId);
+    exists({ id }) {
+        return this.connections.has(id);
     }
     /**
      * send message to connection
-     * @param {number} connId
+     * @param {Partial<IConnection>} conn
      * @param {number} type
      * @param {Buffer} payload
-     * @returns {Promise<void>}
+     * @returns {Promise<boolean>}
      */
-    sendMessage(connId, type, payload = Buffer.alloc(0)) {
+    sendMessage({ id }, type, payload = Buffer.alloc(0)) {
         return new Promise((resolve, reject) => {
-            if (!this.exists(connId)) {
-                reject(new Error(`Connection ${connId} not found`));
+            if (!this.exists({ id })) {
+                reject(new Error(`Connection ${id} not found`));
+                return;
+            }
+            const { muted, socket } = this.connections.get(id);
+            if (muted) {
+                resolve(false);
                 return;
             }
             const data = Buffer.concat([
                 Buffer.from([type]),
                 payload,
             ]);
-            this.connections
-                .get(connId)
-                .socket
-                .send(data, (err) => {
+            socket.send(data, (err) => {
                 if (err) {
                     reject(err);
                 }
                 else {
-                    resolve();
+                    resolve(true);
                 }
             });
         });
     }
-    heartbeatHandler() {
-        this.connections.forEach((connection) => {
-            const { socket, isAlive } = connection;
-            if (!isAlive) {
-                socket.close(1000);
-                return;
-            }
-            try {
-                socket.ping();
-            }
-            catch (err) {
-                //
-            }
-            connection.isAlive = false;
-        });
-    }
-    pongHandler() {
-        this.isAlive = true;
-    }
 };
 ConnectionManager = __decorate([
-    inversify_1.injectable(),
-    __param(0, inversify_1.inject(constants_1.ConstantNames.Config)),
-    __metadata("design:paramtypes", [Object])
+    inversify_1.injectable()
 ], ConnectionManager);
 exports.ConnectionManager = ConnectionManager;

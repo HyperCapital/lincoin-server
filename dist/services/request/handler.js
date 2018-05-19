@@ -56,13 +56,13 @@ let RequestHandler = class RequestHandler {
     }
     middleware(req, res, next) {
         Object.assign(req, {
-            authenticate: () => {
+            authenticate: (sendError = true) => {
                 let result = null;
                 const hash = req.headers.authorization;
                 if (hash && this.sessionManager) {
                     result = this.sessionManager.getHashAddress(utils_1.prepareHex(hash));
                 }
-                if (!result) {
+                if (!result && sendError) {
                     res.sendError(403);
                 }
                 return result;
@@ -91,10 +91,12 @@ let RequestHandler = class RequestHandler {
     }
     status404Handler(req, res) {
         res.sendError(404);
-        const { method, url } = req;
+        const { method, url, query, params } = req;
         this.logger.debug("request:handler:404", {
             method,
             url,
+            query,
+            params,
         });
     }
     status500Handler(err, req, res, next) {

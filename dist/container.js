@@ -10,15 +10,6 @@ const constants_1 = require("./constants");
  * Container
  */
 class Container extends inversify_1.Container {
-    get logger() {
-        return this.get(constants_1.ConstantNames.Logger);
-    }
-    get httpServer() {
-        return this.get(constants_1.ConstantNames.HttpServer);
-    }
-    get wsServer() {
-        return this.get(constants_1.ConstantNames.WsServer);
-    }
     constructor(options = {}) {
         super(Object.assign({ defaultScope: "Singleton" }, options));
     }
@@ -33,8 +24,9 @@ class Container extends inversify_1.Container {
         this.bind(constants_1.ConstantNames.Logger).toConstantValue(new winston_1.Logger(Object.assign({ level: "debug", exitOnError: false, transports: [
                 new winston_1.transports.Console(),
             ] }, (config.logger || {}))));
-        this.bind(constants_1.ConstantNames.HttpServer).toConstantValue(new http_1.Server(null));
-        this.bind(constants_1.ConstantNames.WsServer).toConstantValue(new ws_1.Server(Object.assign({ clientTracking: false, maxPayload: 1024, path: "/", server: this.httpServer }, (config.wsServer || {}))));
+        const httpServer = new http_1.Server(null);
+        this.bind(constants_1.ConstantNames.HttpServer).toConstantValue(httpServer);
+        this.bind(constants_1.ConstantNames.WsServer).toConstantValue(new ws_1.Server(Object.assign({ clientTracking: false, maxPayload: 1024, path: "/", server: httpServer }, (config.wsServer || {}))));
         // services
         this.bind(constants_1.ServiceNames.Apn).to(services_1.Apn);
         this.bind(constants_1.ServiceNames.ConnectionHandler).to(services_1.ConnectionHandler);
@@ -97,6 +89,23 @@ class Container extends inversify_1.Container {
             this.bind(constants_1.ServiceNames.RequestController).to(Controller);
         }
         return this.use(constants_1.ServiceNames.RequestHandler);
+    }
+    /**
+     * starts
+     */
+    start() {
+        const config = this.get(constants_1.ConstantNames.Config);
+        const logger = this.get(constants_1.ConstantNames.Logger);
+        const httpServer = this.get(constants_1.ConstantNames.HttpServer);
+        httpServer
+            .listen((config.httpServer && config.httpServer.port) || 8080, (err) => {
+            if (err) {
+                logger.error("httpServer", err);
+            }
+            else {
+                logger.info("httpServer:listening", httpServer.address());
+            }
+        });
     }
     use(name) {
         if (this.isBound(name)) {

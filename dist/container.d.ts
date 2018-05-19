@@ -1,16 +1,7 @@
-/// <reference types="winston" />
-/// <reference types="node" />
-/// <reference types="ws" />
 import { Container as BaseContainer, interfaces } from "inversify";
-import { Server as HttpServer } from "http";
-import { LoggerInstance } from "winston";
-import { Server as WsServer } from "ws";
 import { IConfig } from "./config";
 import { IConnectionController, IContractController, IRequestController } from "./services";
 export interface IContainer extends interfaces.Container {
-    logger: LoggerInstance;
-    httpServer: HttpServer;
-    wsServer: WsServer;
     setup(config?: IConfig): IContainer;
     bindToService(id: string, Service: {
         new (...args: any[]): any;
@@ -25,14 +16,12 @@ export interface IContainer extends interfaces.Container {
     setRequestControllers(...Controllers: Array<{
         new (): IRequestController;
     }>): IContainer;
+    start(): void;
 }
 /**
  * Container
  */
 export declare class Container extends BaseContainer implements IContainer {
-    readonly logger: LoggerInstance;
-    readonly httpServer: HttpServer;
-    readonly wsServer: WsServer;
     constructor(options?: interfaces.ContainerOptions);
     /**
      * setup
@@ -80,5 +69,9 @@ export declare class Container extends BaseContainer implements IContainer {
     setRequestControllers(...Controllers: Array<{
         new (...args: any[]): any;
     }>): this;
+    /**
+     * starts
+     */
+    start(): void;
     private use(name);
 }

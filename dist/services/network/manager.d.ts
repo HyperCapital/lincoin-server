@@ -8,7 +8,6 @@ export interface INetworkManager {
  * Network manager service
  */
 export declare class NetworkManager implements INetworkManager {
-    private static createWeb3Provider(endpoint);
     private web3Instances;
     constructor(config: IConfig);
     /**
