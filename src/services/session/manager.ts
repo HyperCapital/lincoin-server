@@ -13,7 +13,7 @@ export interface ISessionManager {
   verify(conn: IConnection, signature: Buffer, recovery: number): string;
   getHashAddress(hash: string): string;
   getAddressConnections(address: string): Array<Partial<IConnection>>;
-  getAllConnections(): Array<Partial<IConnection>>;
+  getAllConnections(exceptAddresses?: string[]): Array<Partial<IConnection>>;
 }
 
 /**
@@ -138,13 +138,20 @@ export class SessionManager implements ISessionManager {
 
   /**
    * gets all connection ids
+   * @param {string[]} exceptAddresses
    * @returns {Array<Partial<IConnection>>}
    */
-  public getAllConnections(): Array<Partial<IConnection>> {
-    return [
-      ...this.connIdAddressMap.keys(),
-    ].map((id) => ({
-      id,
-    }));
+  public getAllConnections(exceptAddresses?: string[]): Array<Partial<IConnection>> {
+    const result: Array<Partial<IConnection>> = [];
+
+    this.connIdAddressMap.forEach((address, id) => {
+      if (!exceptAddresses || exceptAddresses.indexOf(address) === -1) {
+        result.push({
+          id,
+        });
+      }
+    });
+
+    return result;
   }
 }

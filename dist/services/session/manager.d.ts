@@ -10,7 +10,7 @@ export interface ISessionManager {
     verify(conn: IConnection, signature: Buffer, recovery: number): string;
     getHashAddress(hash: string): string;
     getAddressConnections(address: string): Array<Partial<IConnection>>;
-    getAllConnections(): Array<Partial<IConnection>>;
+    getAllConnections(exceptAddresses?: string[]): Array<Partial<IConnection>>;
 }
 /**
  * Session manager service
@@ -57,7 +57,8 @@ export declare class SessionManager implements ISessionManager {
     getAddressConnections(address: string): Array<Partial<IConnection>>;
     /**
      * gets all connection ids
+     * @param {string[]} exceptAddresses
      * @returns {Array<Partial<IConnection>>}
      */
-    getAllConnections(): Array<Partial<IConnection>>;
+    getAllConnections(exceptAddresses?: string[]): Array<Partial<IConnection>>;
 }

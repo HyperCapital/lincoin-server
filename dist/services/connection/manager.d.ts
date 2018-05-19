@@ -9,6 +9,8 @@ export interface IConnectionManager {
     create(socket: WebSocket): IConnection;
     terminate(conn: Partial<IConnection>): void;
     exists(conn: Partial<IConnection>): boolean;
+    isMuted(conn: Partial<IConnection>): boolean;
+    toggleMuted(conn: Partial<IConnection>): boolean;
     sendMessage(conn: Partial<IConnection>, type: number, payload?: any): Promise<boolean>;
 }
 /**
@@ -38,6 +40,19 @@ export declare class ConnectionManager implements IConnectionManager {
      * @returns {boolean}
      */
     exists({id}: Partial<IConnection>): boolean;
+    /**
+     * checks if connection is muted
+     * @param {number} id
+     * @returns {boolean}
+     */
+    isMuted({id}: Partial<IConnection>): boolean;
+    /**
+     * toggle muted
+     * @param {number} id
+     * @param {boolean} muted
+     * @returns {boolean}
+     */
+    toggleMuted({id, muted}: Partial<IConnection>): boolean;
     /**
      * send message to connection
      * @param {Partial<IConnection>} conn

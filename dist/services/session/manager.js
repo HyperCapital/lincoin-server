@@ -111,14 +111,19 @@ let SessionManager = class SessionManager {
     }
     /**
      * gets all connection ids
+     * @param {string[]} exceptAddresses
      * @returns {Array<Partial<IConnection>>}
      */
-    getAllConnections() {
-        return [
-            ...this.connIdAddressMap.keys(),
-        ].map((id) => ({
-            id,
-        }));
+    getAllConnections(exceptAddresses) {
+        const result = [];
+        this.connIdAddressMap.forEach((address, id) => {
+            if (!exceptAddresses || exceptAddresses.indexOf(address) === -1) {
+                result.push({
+                    id,
+                });
+            }
+        });
+        return result;
     }
 };
 SessionManager = __decorate([

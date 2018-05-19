@@ -9,6 +9,8 @@ export interface IConnectionManager {
   create(socket: WebSocket): IConnection;
   terminate(conn: Partial<IConnection>): void;
   exists(conn: Partial<IConnection>): boolean;
+  isMuted(conn: Partial<IConnection>): boolean;
+  toggleMuted(conn: Partial<IConnection>): boolean;
   sendMessage(conn: Partial<IConnection>, type: number, payload?: any): Promise<boolean>;
 }
 
@@ -74,6 +76,50 @@ export class ConnectionManager implements IConnectionManager {
    */
   public exists({ id }: Partial<IConnection>): boolean {
     return this.connections.has(id);
+  }
+
+  /**
+   * checks if connection is muted
+   * @param {number} id
+   * @returns {boolean}
+   */
+  public isMuted({ id }: Partial<IConnection>): boolean {
+    if (!this.exists({ id })) {
+      throw new Error(`Connection ${id} not found`);
+    }
+
+    return this.connections.get(id).muted;
+  }
+
+  /**
+   * toggle muted
+   * @param {number} id
+   * @param {boolean} muted
+   * @returns {boolean}
+   */
+  public toggleMuted({ id, muted }: Partial<IConnection>): boolean {
+    if (!this.exists({ id })) {
+      throw new Error(`Connection ${id} not found`);
+    }
+
+    const conn = this.connections.get(id);
+    let toggled = false;
+
+    if (typeof muted !== "undefined") {
+      if (conn.muted !== muted) {
+        toggled = true;
+        conn.muted = muted;
+      }
+    } else {
+      conn.muted = !conn.muted;
+      toggled = true;
+    }
+
+    if (toggled) {
+      this.stats.muted += (conn.muted) ? 1 : -1;
+    }
+
+    return conn.muted;
   }
 
   /**

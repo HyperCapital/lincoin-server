@@ -63,6 +63,44 @@ let ConnectionManager = class ConnectionManager {
         return this.connections.has(id);
     }
     /**
+     * checks if connection is muted
+     * @param {number} id
+     * @returns {boolean}
+     */
+    isMuted({ id }) {
+        if (!this.exists({ id })) {
+            throw new Error(`Connection ${id} not found`);
+        }
+        return this.connections.get(id).muted;
+    }
+    /**
+     * toggle muted
+     * @param {number} id
+     * @param {boolean} muted
+     * @returns {boolean}
+     */
+    toggleMuted({ id, muted }) {
+        if (!this.exists({ id })) {
+            throw new Error(`Connection ${id} not found`);
+        }
+        const conn = this.connections.get(id);
+        let toggled = false;
+        if (typeof muted !== "undefined") {
+            if (conn.muted !== muted) {
+                toggled = true;
+                conn.muted = muted;
+            }
+        }
+        else {
+            conn.muted = !conn.muted;
+            toggled = true;
+        }
+        if (toggled) {
+            this.stats.muted += (conn.muted) ? 1 : -1;
+        }
+        return conn.muted;
+    }
+    /**
      * send message to connection
      * @param {Partial<IConnection>} conn
      * @param {number} type
