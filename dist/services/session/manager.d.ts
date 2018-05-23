@@ -1,17 +1,18 @@
 /// <reference types="node" />
 import { IConnection } from "../connection";
+import { ISession } from "./interfaces";
 export interface ISessionManager {
     stats: {
         total: number;
         verified: number;
     };
-    create(conn: IConnection): Buffer;
+    create(conn: IConnection): ISession;
     destroy(conn: IConnection): void;
-    verify(conn: IConnection, signature: Buffer, recovery: number): string;
-    getHashAddress(hash: string): string;
-    getConnectionAddress(conn: IConnection): string;
-    getAddressConnections(address: string): Array<Partial<IConnection>>;
-    getAllConnections(exceptAddresses?: string[]): Array<Partial<IConnection>>;
+    verify(conn: IConnection, signature: Buffer, recovery: number): ISession;
+    getConnectionSession(conn: IConnection): ISession;
+    getHashSession(hash: string): ISession;
+    getAddressConnections(address: string): IConnection[];
+    getAllAddressesConnections(exceptAddresses?: string[]): IConnection[];
 }
 /**
  * Session manager service
@@ -21,16 +22,15 @@ export declare class SessionManager implements ISessionManager {
         total: number;
         verified: number;
     };
-    protected connIdHashMap: Map<number, Buffer>;
-    protected connIdAddressMap: Map<number, string>;
-    protected addressConnIdsMap: Map<string, number[]>;
-    protected hashAddressMap: Map<string, string>;
+    protected connIdSessionMap: Map<number, ISession>;
+    protected hashSessionMap: Map<string, ISession>;
+    protected addressSessionsMap: Map<string, ISession[]>;
     /**
      * creates session
      * @param {IConnection} conn
-     * @returns {Buffer}
+     * @returns {ISession}
      */
-    create({id}: IConnection): Buffer;
+    create(conn: IConnection): ISession;
     /**
      * destroys session
      * @param {IConnection} conn
@@ -41,31 +41,32 @@ export declare class SessionManager implements ISessionManager {
      * @param {IConnection} conn
      * @param {Buffer} signature
      * @param {number} recovery
-     * @returns {string}
+     * @returns {ISession}
      */
-    verify({id}: IConnection, signature: Buffer, recovery: number): string;
+    verify({id}: IConnection, signature: Buffer, recovery: number): ISession;
     /**
-     * gets hash address
-     * @param {string} hash
-     * @returns {string}
-     */
-    getHashAddress(hash: string): string;
-    /**
-     * gets connection address
+     * gets connection session
      * @param {IConnection} conn
      * @returns {string}
      */
-    getConnectionAddress({id}: IConnection): string;
+    getConnectionSession({id}: IConnection): ISession;
     /**
-     * gets address connection id
+     * gets hash session
+     * @param {string} hash
+     * @returns {ISession}
+     */
+    getHashSession(hash: string): ISession;
+    /**
+     * gets address connections
      * @param {string} address
-     * @returns {Array<Partial<IConnection>>}
+     * @returns {IConnection[]}
      */
-    getAddressConnections(address: string): Array<Partial<IConnection>>;
+    getAddressConnections(address: string): IConnection[];
     /**
-     * gets all connection ids
+     * gets all addresses connections
      * @param {string[]} exceptAddresses
-     * @returns {Array<Partial<IConnection>>}
+     * @returns {IConnection[]}
      */
-    getAllConnections(exceptAddresses?: string[]): Array<Partial<IConnection>>;
+    getAllAddressesConnections(exceptAddresses?: string[]): IConnection[];
+    private removeConnectionAddress(connId, address);
 }

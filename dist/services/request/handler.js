@@ -60,7 +60,10 @@ let RequestHandler = class RequestHandler {
                 let result = null;
                 const hash = req.headers.authorization;
                 if (hash && this.sessionManager) {
-                    result = this.sessionManager.getHashAddress(utils_1.prepareHex(hash));
+                    const session = this.sessionManager.getHashSession(utils_1.prepareHex(hash));
+                    if (session && session.address) {
+                        result = session.address;
+                    }
                 }
                 if (!result && sendError) {
                     res.sendError(403);

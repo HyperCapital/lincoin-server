@@ -8,6 +8,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 const crypto_1 = require("crypto");
 const inversify_1 = require("inversify");
+const secp256k1_1 = require("secp256k1");
 const utils_1 = require("../../utils");
 /**
  * Session manager service
@@ -21,19 +22,24 @@ let SessionManager = class SessionManager {
             total: 0,
             verified: 0,
         };
-        this.connIdHashMap = new Map();
-        this.connIdAddressMap = new Map();
-        this.addressConnIdsMap = new Map();
-        this.hashAddressMap = new Map();
+        this.connIdSessionMap = new Map();
+        this.hashSessionMap = new Map();
+        this.addressSessionsMap = new Map();
     }
     /**
      * creates session
      * @param {IConnection} conn
-     * @returns {Buffer}
+     * @returns {ISession}
      */
-    create({ id }) {
-        const result = crypto_1.randomBytes(32);
-        this.connIdHashMap.set(id, result);
+    create(conn) {
+        const { id } = conn;
+        const hash = crypto_1.randomBytes(32);
+        const result = {
+            conn,
+            hash,
+        };
+        this.connIdSessionMap.set(id, result);
+        this.hashSessionMap.set(utils_1.bufferToHex(hash), result);
         ++this.stats.total;
         return result;
     }
@@ -42,23 +48,15 @@ let SessionManager = class SessionManager {
      * @param {IConnection} conn
      */
     destroy({ id }) {
-        if (this.connIdAddressMap.has(id)) {
-            const hash = this.connIdHashMap.get(id);
-            const address = this.connIdAddressMap.get(id);
-            this.connIdAddressMap.delete(id);
-            const addressConnIds = this.addressConnIdsMap
-                .get(address)
-                .filter((item) => item !== id);
-            if (addressConnIds.length) {
-                this.addressConnIdsMap.set(address, addressConnIds);
-            }
-            else {
-                this.addressConnIdsMap.delete(address);
-            }
-            this.hashAddressMap.delete(utils_1.bufferToHex(hash));
+        if (!this.connIdSessionMap.has(id)) {
+            return;
+        }
+        const { hash, address, } = this.connIdSessionMap.get(id);
+        this.hashSessionMap.delete(utils_1.bufferToHex(hash));
+        if (address && this.removeConnectionAddress(id, address)) {
             --this.stats.verified;
         }
-        this.connIdHashMap.delete(id);
+        this.connIdSessionMap.delete(id);
         --this.stats.total;
     }
     /**
@@ -66,71 +64,88 @@ let SessionManager = class SessionManager {
      * @param {IConnection} conn
      * @param {Buffer} signature
      * @param {number} recovery
-     * @returns {string}
+     * @returns {ISession}
      */
     verify({ id }, signature, recovery) {
-        let result = null;
-        if (this.connIdHashMap.has(id) &&
-            !this.connIdAddressMap.has(id)) {
-            const hash = this.connIdHashMap.get(id);
+        let result = this.connIdSessionMap.get(id) || null;
+        if (result) {
             try {
-                const address = utils_1.recoverAddress(hash, signature, recovery);
-                const addressConnIds = this.addressConnIdsMap.get(address) || [];
-                if (addressConnIds.indexOf(id) === -1) {
-                    addressConnIds.push(id);
-                    this.connIdAddressMap.set(id, address);
-                    this.addressConnIdsMap.set(address, addressConnIds);
-                    this.hashAddressMap.set(utils_1.bufferToHex(hash), address);
+                const publicKey = secp256k1_1.recover(result.hash, signature, recovery, false);
+                const address = utils_1.publicKeyToAddress(publicKey);
+                if (!result.address ||
+                    result.address !== address) {
+                    if (result.address && this.removeConnectionAddress(id, result.address)) {
+                        --this.stats.verified;
+                    }
+                    result.address = address;
+                    result.publicKey = publicKey;
+                    this.addressSessionsMap.set(address, [
+                        ...this.addressSessionsMap.get(address) || [],
+                        result,
+                    ]);
                     ++this.stats.verified;
-                    result = address;
                 }
             }
-            catch (err) {
+            catch (e) {
                 result = null;
             }
         }
         return result;
     }
     /**
-     * gets hash address
-     * @param {string} hash
-     * @returns {string}
-     */
-    getHashAddress(hash) {
-        return this.hashAddressMap.get(hash) || null;
-    }
-    /**
-     * gets connection address
+     * gets connection session
      * @param {IConnection} conn
      * @returns {string}
      */
-    getConnectionAddress({ id }) {
-        return this.connIdAddressMap.get(id) || null;
+    getConnectionSession({ id }) {
+        return this.connIdSessionMap.get(id) || null;
     }
     /**
-     * gets address connection id
+     * gets hash session
+     * @param {string} hash
+     * @returns {ISession}
+     */
+    getHashSession(hash) {
+        return this.hashSessionMap.get(hash) || null;
+    }
+    /**
+     * gets address connections
      * @param {string} address
-     * @returns {Array<Partial<IConnection>>}
+     * @returns {IConnection[]}
      */
     getAddressConnections(address) {
-        return (this.addressConnIdsMap.get(address) || []).map((id) => ({
-            id,
-        }));
+        return (this.addressSessionsMap.get(address) || []).map(({ conn }) => conn);
     }
     /**
-     * gets all connection ids
+     * gets all addresses connections
      * @param {string[]} exceptAddresses
-     * @returns {Array<Partial<IConnection>>}
+     * @returns {IConnection[]}
      */
-    getAllConnections(exceptAddresses) {
-        const result = [];
-        this.connIdAddressMap.forEach((address, id) => {
+    getAllAddressesConnections(exceptAddresses) {
+        let result = [];
+        this.addressSessionsMap.forEach((sessions, address) => {
             if (!exceptAddresses || exceptAddresses.indexOf(address) === -1) {
-                result.push({
-                    id,
-                });
+                result = [
+                    ...result,
+                    ...sessions.map(({ conn }) => conn),
+                ];
             }
         });
+        return result;
+    }
+    removeConnectionAddress(connId, address) {
+        let result = false;
+        let addressSessions = this.addressSessionsMap.get(address) || [];
+        if (addressSessions.length) {
+            addressSessions = addressSessions.filter(({ conn }) => conn.id !== connId);
+            if (addressSessions.length) {
+                this.addressSessionsMap.set(address, addressSessions);
+            }
+            else {
+                this.addressSessionsMap.delete(address);
+            }
+            result = true;
+        }
         return result;
     }
 };

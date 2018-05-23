@@ -1,20 +1,22 @@
 import { randomBytes } from "crypto";
 import { injectable } from "inversify";
-import { bufferToHex, recoverAddress } from "../../utils";
+import { recover } from "secp256k1";
+import { bufferToHex, publicKeyToAddress } from "../../utils";
 import { IConnection } from "../connection";
+import { ISession } from "./interfaces";
 
 export interface ISessionManager {
   stats: {
     total: number;
     verified: number;
   };
-  create(conn: IConnection): Buffer;
+  create(conn: IConnection): ISession;
   destroy(conn: IConnection): void;
-  verify(conn: IConnection, signature: Buffer, recovery: number): string;
-  getHashAddress(hash: string): string;
-  getConnectionAddress(conn: IConnection): string;
-  getAddressConnections(address: string): Array<Partial<IConnection>>;
-  getAllConnections(exceptAddresses?: string[]): Array<Partial<IConnection>>;
+  verify(conn: IConnection, signature: Buffer, recovery: number): ISession;
+  getConnectionSession(conn: IConnection): ISession;
+  getHashSession(hash: string): ISession;
+  getAddressConnections(address: string): IConnection[];
+  getAllAddressesConnections(exceptAddresses?: string[]): IConnection[];
 }
 
 /**
@@ -27,20 +29,25 @@ export class SessionManager implements ISessionManager {
     verified: 0,
   };
 
-  protected connIdHashMap = new Map<number, Buffer>();
-  protected connIdAddressMap = new Map<number, string>();
-  protected addressConnIdsMap = new Map<string, number[]>();
-  protected hashAddressMap = new Map<string, string>();
+  protected connIdSessionMap = new Map<number, ISession>();
+  protected hashSessionMap = new Map<string, ISession>();
+  protected addressSessionsMap = new Map<string, ISession[]>();
 
   /**
    * creates session
    * @param {IConnection} conn
-   * @returns {Buffer}
+   * @returns {ISession}
    */
-  public create({ id }: IConnection): Buffer {
-    const result = randomBytes(32);
+  public create(conn: IConnection): ISession {
+    const { id } = conn;
+    const hash = randomBytes(32);
+    const result: ISession = {
+      conn,
+      hash,
+    };
 
-    this.connIdHashMap.set(id, result);
+    this.connIdSessionMap.set(id, result);
+    this.hashSessionMap.set(bufferToHex(hash), result);
 
     ++this.stats.total;
 
@@ -52,29 +59,22 @@ export class SessionManager implements ISessionManager {
    * @param {IConnection} conn
    */
   public destroy({ id }: IConnection): void {
-    if (this.connIdAddressMap.has(id)) {
-      const hash = this.connIdHashMap.get(id);
-      const address = this.connIdAddressMap.get(id);
+    if (!this.connIdSessionMap.has(id)) {
+      return;
+    }
 
-      this.connIdAddressMap.delete(id);
+    const {
+      hash,
+      address,
+    } = this.connIdSessionMap.get(id);
 
-      const addressConnIds = this.addressConnIdsMap
-        .get(address)
-        .filter((item) => item !== id);
+    this.hashSessionMap.delete(bufferToHex(hash));
 
-      if (addressConnIds.length) {
-        this.addressConnIdsMap.set(address, addressConnIds);
-      } else {
-        this.addressConnIdsMap.delete(address);
-      }
-
-      this.hashAddressMap.delete(bufferToHex(hash));
-
+    if (address && this.removeConnectionAddress(id, address)) {
       --this.stats.verified;
     }
 
-    this.connIdHashMap.delete(id);
-
+    this.connIdSessionMap.delete(id);
     --this.stats.total;
   }
 
@@ -83,33 +83,37 @@ export class SessionManager implements ISessionManager {
    * @param {IConnection} conn
    * @param {Buffer} signature
    * @param {number} recovery
-   * @returns {string}
+   * @returns {ISession}
    */
-  public verify({ id }: IConnection, signature: Buffer, recovery: number): string {
-    let result: string = null;
+  public verify({ id }: IConnection, signature: Buffer, recovery: number): ISession {
+    let result = this.connIdSessionMap.get(id) || null;
 
-    if (
-      this.connIdHashMap.has(id) &&
-      !this.connIdAddressMap.has(id)
-    ) {
-      const hash = this.connIdHashMap.get(id);
-
+    if (result) {
       try {
-        const address = recoverAddress(hash, signature, recovery);
-        const addressConnIds = this.addressConnIdsMap.get(address) || [];
+        const publicKey = recover(result.hash, signature, recovery, false);
+        const address = publicKeyToAddress(publicKey);
 
-        if (addressConnIds.indexOf(id) === -1) {
-          addressConnIds.push(id);
+        if (
+          !result.address ||
+          result.address !== address
+        ) {
 
-          this.connIdAddressMap.set(id, address);
-          this.addressConnIdsMap.set(address, addressConnIds);
-          this.hashAddressMap.set(bufferToHex(hash), address);
+          if (result.address && this.removeConnectionAddress(id, result.address)) {
+            --this.stats.verified;
+          }
+
+          result.address = address;
+          result.publicKey = publicKey;
+
+          this.addressSessionsMap.set(address, [
+            ...this.addressSessionsMap.get(address) || [],
+            result,
+          ]);
 
           ++this.stats.verified;
-
-          result = address;
         }
-      } catch (err) {
+
+      } catch (e) {
         result = null;
       }
     }
@@ -118,49 +122,67 @@ export class SessionManager implements ISessionManager {
   }
 
   /**
-   * gets hash address
-   * @param {string} hash
-   * @returns {string}
-   */
-  public getHashAddress(hash: string): string {
-    return this.hashAddressMap.get(hash) || null;
-  }
-
-  /**
-   * gets connection address
+   * gets connection session
    * @param {IConnection} conn
    * @returns {string}
    */
-  public getConnectionAddress({ id }: IConnection): string {
-    return this.connIdAddressMap.get(id) || null;
+  public getConnectionSession({ id }: IConnection): ISession {
+    return this.connIdSessionMap.get(id) || null;
   }
 
   /**
-   * gets address connection id
+   * gets hash session
+   * @param {string} hash
+   * @returns {ISession}
+   */
+  public getHashSession(hash: string): ISession {
+    return this.hashSessionMap.get(hash) || null;
+  }
+
+  /**
+   * gets address connections
    * @param {string} address
-   * @returns {Array<Partial<IConnection>>}
+   * @returns {IConnection[]}
    */
-  public getAddressConnections(address: string): Array<Partial<IConnection>> {
-    return (this.addressConnIdsMap.get(address) || []).map((id) => ({
-      id,
-    }));
+  public getAddressConnections(address: string): IConnection[] {
+    return (this.addressSessionsMap.get(address) || []).map(({ conn }) => conn);
   }
 
   /**
-   * gets all connection ids
+   * gets all addresses connections
    * @param {string[]} exceptAddresses
-   * @returns {Array<Partial<IConnection>>}
+   * @returns {IConnection[]}
    */
-  public getAllConnections(exceptAddresses?: string[]): Array<Partial<IConnection>> {
-    const result: Array<Partial<IConnection>> = [];
+  public getAllAddressesConnections(exceptAddresses?: string[]): IConnection[] {
+    let result: IConnection[] = [];
 
-    this.connIdAddressMap.forEach((address, id) => {
+    this.addressSessionsMap.forEach((sessions, address) => {
       if (!exceptAddresses || exceptAddresses.indexOf(address) === -1) {
-        result.push({
-          id,
-        });
+        result = [
+          ...result,
+          ...sessions.map(({ conn }) => conn),
+        ];
       }
     });
+
+    return result;
+  }
+
+  private removeConnectionAddress(connId: number, address: string): boolean {
+    let result = false;
+    let addressSessions = this.addressSessionsMap.get(address) || [];
+
+    if (addressSessions.length) {
+      addressSessions = addressSessions.filter(({ conn }) => conn.id !== connId);
+
+      if (addressSessions.length) {
+        this.addressSessionsMap.set(address, addressSessions);
+      } else {
+        this.addressSessionsMap.delete(address);
+      }
+
+      result = true;
+    }
 
     return result;
   }

@@ -58,9 +58,10 @@ export class RequestHandler {
         let result: string = null;
         const hash = req.headers.authorization;
         if (hash && this.sessionManager) {
-          result = this.sessionManager.getHashAddress(
-            prepareHex(hash),
-          );
+          const session = this.sessionManager.getHashSession(prepareHex(hash));
+          if (session && session.address) {
+            result = session.address;
+          }
         }
 
         if (!result && sendError) {
