@@ -5,7 +5,7 @@ import { LoggerInstance } from "winston";
 import { inject, injectable, multiInject, optional } from "inversify";
 import { ConstantNames, ServiceNames } from "../../constants";
 import { prepareHex } from "../../utils";
-import { ISessionManager } from "../session";
+import { ISessionManager, ISession } from "../session";
 import { IRequestController, IHttpRequest, IHttpResponse } from "./interfaces";
 
 /**
@@ -55,12 +55,13 @@ export class RequestHandler {
   private middleware(req: IHttpRequest, res: IHttpResponse, next: express.NextFunction) {
     Object.assign(req, {
       authenticate: (sendError: boolean = true) => {
-        let result: string = null;
+        let result: ISession = null;
         const hash = req.headers.authorization;
         if (hash && this.sessionManager) {
           const session = this.sessionManager.getHashSession(prepareHex(hash));
+
           if (session && session.address) {
-            result = session.address;
+            result = session;
           }
         }
 

@@ -62,7 +62,7 @@ let RequestHandler = class RequestHandler {
                 if (hash && this.sessionManager) {
                     const session = this.sessionManager.getHashSession(utils_1.prepareHex(hash));
                     if (session && session.address) {
-                        result = session.address;
+                        result = session;
                     }
                 }
                 if (!result && sendError) {
