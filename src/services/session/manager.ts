@@ -13,6 +13,7 @@ export interface ISessionManager {
   create(conn: IConnection): ISession;
   destroy(conn: IConnection): void;
   verify(conn: IConnection, signature: Buffer, recovery: number): ISession;
+  unverify(conn: IConnection): void;
   getConnectionSession(conn: IConnection): ISession;
   getHashSession(hash: string): ISession;
   getAddressConnections(address: string): IConnection[];
@@ -119,6 +120,21 @@ export class SessionManager implements ISessionManager {
     }
 
     return result;
+  }
+
+  public unverify({ id }: IConnection): void {
+    const session = this.connIdSessionMap.get(id) || null;
+
+    if (
+      session &&
+      session.address &&
+      this.removeConnectionAddress(id, session.address)
+    ) {
+      session.address = null;
+      session.publicKey = null;
+
+      --this.stats.verified;
+    }
   }
 
   /**
