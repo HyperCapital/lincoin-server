@@ -92,6 +92,16 @@ let SessionManager = class SessionManager {
         }
         return result;
     }
+    unverify({ id }) {
+        const session = this.connIdSessionMap.get(id) || null;
+        if (session &&
+            session.address &&
+            this.removeConnectionAddress(id, session.address)) {
+            session.address = null;
+            session.publicKey = null;
+            --this.stats.verified;
+        }
+    }
     /**
      * gets connection session
      * @param {IConnection} conn
