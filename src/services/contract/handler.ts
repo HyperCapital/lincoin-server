@@ -3,9 +3,8 @@ import * as Web3 from "web3";
 import { LoggerInstance } from "winston";
 import { ConstantNames, ServiceNames, DEFAULT_ID } from "../../constants";
 import { IConfig } from "../../config";
-import { INetworkManager } from "../network";
 import { IContractController, IContractEventHandler } from "./interfaces";
-import abis from "./abis";
+import { IContractManager } from "./manager";
 
 /**
  * Contract handler service
@@ -17,7 +16,7 @@ export class ContractHandler {
   constructor(
     @inject(ConstantNames.Config) config: IConfig,
     @inject(ConstantNames.Logger) logger: LoggerInstance,
-    @inject(ServiceNames.NetworkManager) networkManager: INetworkManager,
+    @inject(ServiceNames.ContractManager) contractManager: IContractManager,
     @multiInject(ServiceNames.ContractController) @optional() controllers: IContractController[],
   ) {
     for (const { contract, eventHandlers } of controllers) {
@@ -30,48 +29,39 @@ export class ContractHandler {
 
     if (config.contracts) {
       for (const options of config.contracts) {
-        let { id, abi } = options;
-        const { type, addresses, filter, additionalFilter } = options;
+        const { id, addresses, handler } = options;
 
-        if (!id) {
-          id = DEFAULT_ID;
-        }
+        for (const { network } of addresses) {
+          const contract = contractManager.get(network, id);
 
-        if (!abi && type) {
-          abi = abis[ type ] || null;
-        }
+          if (contract) {
+            const filter = handler && handler.filter;
+            const additionalFilter = handler && handler.additionalFilter;
 
-        if (abi) {
-          for (const { network, address } of addresses) {
-            const web3 = networkManager.getWeb3(network);
-            if (web3) {
-              const contract: any = web3.eth.contract(abi).at(address);
+            contract.web3Contract.allEvents(
+              filter || null,
+              additionalFilter || {
+                fromBlock: "latest",
+              },
+              (err, log) => {
+                if (err) {
+                  logger.error("contract.event", {
+                    id,
+                    network,
+                  }, err);
+                  return;
+                }
 
-              contract.allEvents(
-                filter || null,
-                additionalFilter || {
-                  fromBlock: "latest",
-                },
-                (err, log) => {
-                  if (err) {
-                    logger.error("contract.event", {
+                this
+                  .eventHandler(id, network, log)
+                  .catch((err) => {
+                    logger.error("contract.eventHandler", {
                       id,
                       network,
                     }, err);
-                    return;
-                  }
-
-                  this
-                    .eventHandler(id, network, log)
-                    .catch((err) => {
-                      logger.error("contract.eventHandler", {
-                        id,
-                        network,
-                      }, err);
-                    });
-                },
-              );
-            }
+                  });
+              },
+            );
           }
         }
       }

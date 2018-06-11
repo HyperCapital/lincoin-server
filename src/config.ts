@@ -14,12 +14,14 @@ export interface IConfig {
     id?: string;
     type?: ContractTypes;
     abi?: any;
-    filter?: any;
-    additionalFilter?: any;
     addresses: Array<{
       network: number;
       address: string;
     }>;
+    handler?: {
+      filter?: any;
+      additionalFilter?: any;
+    };
   }>;
   httpServer?: {
     port: number;
