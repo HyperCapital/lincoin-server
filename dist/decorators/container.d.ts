@@ -5,4 +5,5 @@ export declare const injectLogger: TInject;
 export declare const injectApn: TInject;
 export declare const injectConnectionManager: TInject;
 export declare const injectSessionManager: TInject;
+export declare const injectNetwork: TInject;
 export { injectable, inject, multiInject, optional };

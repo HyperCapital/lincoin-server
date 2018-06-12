@@ -13,3 +13,4 @@ exports.injectLogger = () => inversify_1.inject(constants_1.ConstantNames.Logger
 exports.injectApn = () => inversify_1.inject(constants_1.ServiceNames.Apn);
 exports.injectConnectionManager = () => inversify_1.inject(constants_1.ServiceNames.ConnectionManager);
 exports.injectSessionManager = () => inversify_1.inject(constants_1.ServiceNames.SessionManager);
+exports.injectNetwork = () => inversify_1.inject(constants_1.ServiceNames.Network);
