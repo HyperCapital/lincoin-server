@@ -15,20 +15,18 @@ export interface IConfig {
         id?: string;
         type?: ContractTypes;
         abi?: any;
-        filter?: any;
-        additionalFilter?: any;
-        addresses: Array<{
-            network: number;
-            address: string;
-        }>;
+        address: string;
+        handler?: {
+            filter?: any;
+            additionalFilter?: any;
+        };
     }>;
     httpServer?: {
         port: number;
     };
     logger?: LoggerOptions;
-    networks?: Array<{
-        id: number;
+    network?: {
         endpoint: string;
-    }>;
+    };
     wsServer?: WsServerOptions;
 }

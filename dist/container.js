@@ -32,7 +32,8 @@ class Container extends inversify_1.Container {
         this.bind(constants_1.ServiceNames.ConnectionHandler).to(services_1.ConnectionHandler);
         this.bind(constants_1.ServiceNames.ConnectionManager).to(services_1.ConnectionManager);
         this.bind(constants_1.ServiceNames.ContractHandler).to(services_1.ContractHandler);
-        this.bind(constants_1.ServiceNames.NetworkManager).to(services_1.NetworkManager);
+        this.bind(constants_1.ServiceNames.ContractManager).to(services_1.ContractManager);
+        this.bind(constants_1.ServiceNames.Network).to(services_1.Network);
         this.bind(constants_1.ServiceNames.RequestHandler).to(services_1.RequestHandler);
         this.bind(constants_1.ServiceNames.SessionManager).to(services_1.SessionManager);
         return this;
