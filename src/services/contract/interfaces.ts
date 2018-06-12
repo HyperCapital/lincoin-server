@@ -12,6 +12,7 @@ export interface IContractController {
 }
 
 export interface IContract {
+  id: string;
   web3Contract: Web3.IContract;
   call(methodName: string, ...args: any[]): Promise<any[]>;
   getData(methodName: string, ...args: any[]): string;

@@ -29,52 +29,49 @@ export class ContractHandler {
 
     if (config.contracts) {
       for (const options of config.contracts) {
-        const { id, addresses, handler } = options;
+        const { handler } = options;
+        const id = options.id || DEFAULT_ID;
 
-        for (const { network } of addresses) {
-          const contract = contractManager.get(network, id);
+        const contract = contractManager.get(id);
 
-          if (contract) {
-            const filter = handler && handler.filter;
-            const additionalFilter = handler && handler.additionalFilter;
+        if (contract) {
+          const filter = handler && handler.filter;
+          const additionalFilter = handler && handler.additionalFilter;
 
-            contract.web3Contract.allEvents(
-              filter || null,
-              additionalFilter || {
-                fromBlock: "latest",
-              },
-              (err, log) => {
-                if (err) {
-                  logger.error("contract.event", {
+          contract.web3Contract.allEvents(
+            filter || null,
+            additionalFilter || {
+              fromBlock: "latest",
+            },
+            (err, log) => {
+              if (err) {
+                logger.error("contract.event", {
+                  id,
+                }, err);
+                return;
+              }
+
+              this
+                .eventHandler(id, log)
+                .catch((err) => {
+                  logger.error("contract.eventHandler", {
                     id,
-                    network,
                   }, err);
-                  return;
-                }
-
-                this
-                  .eventHandler(id, network, log)
-                  .catch((err) => {
-                    logger.error("contract.eventHandler", {
-                      id,
-                      network,
-                    }, err);
-                  });
-              },
-            );
-          }
+                });
+            },
+          );
         }
       }
     }
   }
 
-  private async eventHandler(contract: string, network: number, log: Web3.IEventLog): Promise<void> {
+  private async eventHandler(contract: string, log: Web3.IEventLog): Promise<void> {
     if (this.eventHandlers[ contract ]) {
       const { event } = log;
 
       for (const { type, handler } of this.eventHandlers[ contract ]) {
         if (type === event) {
-          const promise: any = handler(network, log);
+          const promise: any = handler(log);
           if (promise instanceof Promise) {
             await promise;
           }

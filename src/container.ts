@@ -11,7 +11,7 @@ import {
   ContractHandler,
   IContractController,
   ContractManager,
-  NetworkManager,
+  Network,
   RequestHandler,
   IRequestController,
   SessionManager,
@@ -77,7 +77,7 @@ export class Container extends BaseContainer implements IContainer {
     this.bind(ServiceNames.ConnectionManager).to(ConnectionManager);
     this.bind(ServiceNames.ContractHandler).to(ContractHandler);
     this.bind(ServiceNames.ContractManager).to(ContractManager);
-    this.bind(ServiceNames.NetworkManager).to(NetworkManager);
+    this.bind(ServiceNames.Network).to(Network);
     this.bind(ServiceNames.RequestHandler).to(RequestHandler);
     this.bind(ServiceNames.SessionManager).to(SessionManager);
 

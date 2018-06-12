@@ -15,7 +15,7 @@ export enum ServiceNames {
   ContractController = "internal/service/CONTRACT_CONTROLLER",
   ContractHandler = "internal/service/CONTRACT_HANDLER",
   ContractManager = "internal/service/CONTRACT_MANAGER",
-  NetworkManager = "internal/service/NETWORK_MANAGER",
+  Network = "internal/service/NETWORK",
   RequestController = "internal/service/REQUEST_CONTROLLER",
   RequestHandler = "internal/service/REQUEST_HANDLER",
   SessionManager = "internal/service/SESSION_MANAGER",

@@ -14,10 +14,7 @@ export interface IConfig {
     id?: string;
     type?: ContractTypes;
     abi?: any;
-    addresses: Array<{
-      network: number;
-      address: string;
-    }>;
+    address: string;
     handler?: {
       filter?: any;
       additionalFilter?: any;
@@ -27,9 +24,8 @@ export interface IConfig {
     port: number;
   };
   logger?: LoggerOptions;
-  networks?: Array<{
-    id: number;
+  network?: {
     endpoint: string;
-  }>;
+  };
   wsServer?: WsServerOptions;
 }
