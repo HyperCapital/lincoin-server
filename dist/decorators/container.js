@@ -11,6 +11,7 @@ exports.injectConfig = () => inversify_1.inject(constants_1.ConstantNames.Config
 exports.injectLogger = () => inversify_1.inject(constants_1.ConstantNames.Logger);
 // services
 exports.injectApn = () => inversify_1.inject(constants_1.ServiceNames.Apn);
+exports.injectContractManager = () => inversify_1.inject(constants_1.ServiceNames.ContractManager);
 exports.injectConnectionManager = () => inversify_1.inject(constants_1.ServiceNames.ConnectionManager);
 exports.injectSessionManager = () => inversify_1.inject(constants_1.ServiceNames.SessionManager);
 exports.injectNetwork = () => inversify_1.inject(constants_1.ServiceNames.Network);

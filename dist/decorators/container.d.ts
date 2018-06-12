@@ -3,6 +3,7 @@ export declare type TInject = () => (target: any, targetKey: string, index?: num
 export declare const injectConfig: TInject;
 export declare const injectLogger: TInject;
 export declare const injectApn: TInject;
+export declare const injectContractManager: TInject;
 export declare const injectConnectionManager: TInject;
 export declare const injectSessionManager: TInject;
 export declare const injectNetwork: TInject;
