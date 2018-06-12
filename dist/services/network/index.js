@@ -17,6 +17,7 @@ const Web3 = require("web3");
 const eth_api_1 = require("eth-api");
 const constants_1 = require("../../constants");
 const utils_1 = require("./utils");
+inversify_1.decorate(inversify_1.injectable(), eth_api_1.Api);
 /**
  * Network service
  */

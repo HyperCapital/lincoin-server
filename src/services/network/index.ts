@@ -1,9 +1,11 @@
-import { injectable, inject } from "inversify";
+import { injectable, inject, decorate } from "inversify";
 import * as Web3 from "web3";
 import { Api, IApi } from "eth-api";
 import { ConstantNames } from "../../constants";
 import { IConfig } from "../../config";
 import { createWeb3Provider } from "./utils";
+
+decorate(injectable(), Api);
 
 export interface INetwork extends IApi {
   web3: Web3.IWeb3;
