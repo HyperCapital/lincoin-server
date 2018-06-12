@@ -1,10 +1,11 @@
 import { injectable, inject } from "inversify";
 import * as Web3 from "web3";
+import { Api, IApi } from "eth-api";
 import { ConstantNames } from "../../constants";
 import { IConfig } from "../../config";
 import { createWeb3Provider } from "./utils";
 
-export interface INetwork {
+export interface INetwork extends IApi {
   web3: Web3.IWeb3;
 }
 
@@ -12,14 +13,12 @@ export interface INetwork {
  * Network service
  */
 @injectable()
-export class Network implements INetwork {
+export class Network extends Api implements INetwork {
 
   public readonly web3: Web3.IWeb3 = null;
 
   constructor(@inject(ConstantNames.Config) config: IConfig) {
-    if (config.network) {
-      const { endpoint } = config.network;
-      this.web3 = new Web3(createWeb3Provider(endpoint));
-    }
+    super(config.network ? config.network.endpoint : null);
+    this.web3 = new Web3(createWeb3Provider(this.endpoint));
   }
 }

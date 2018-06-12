@@ -35,14 +35,9 @@ export class ContractHandler {
         const contract = contractManager.get(id);
 
         if (contract) {
-          const filter = handler && handler.filter;
-          const additionalFilter = handler && handler.additionalFilter;
-
-          contract.web3Contract.allEvents(
-            filter || null,
-            additionalFilter || {
-              fromBlock: "latest",
-            },
+          contract.watch(
+            handler && handler.filter,
+            handler && handler.additionalFilter,
             (err, log) => {
               if (err) {
                 logger.error("contract.event", {

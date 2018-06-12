@@ -14,18 +14,17 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const inversify_1 = require("inversify");
 const Web3 = require("web3");
+const eth_api_1 = require("eth-api");
 const constants_1 = require("../../constants");
 const utils_1 = require("./utils");
 /**
  * Network service
  */
-let Network = class Network {
+let Network = class Network extends eth_api_1.Api {
     constructor(config) {
+        super(config.network ? config.network.endpoint : null);
         this.web3 = null;
-        if (config.network) {
-            const { endpoint } = config.network;
-            this.web3 = new Web3(utils_1.createWeb3Provider(endpoint));
-        }
+        this.web3 = new Web3(utils_1.createWeb3Provider(this.endpoint));
     }
 };
 Network = __decorate([

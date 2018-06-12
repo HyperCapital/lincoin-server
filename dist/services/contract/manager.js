@@ -14,6 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const inversify_1 = require("inversify");
 const constants_1 = require("../../constants");
+const model_1 = require("./model");
 const abis_1 = require("./abis");
 /**
  * Contract handler service
@@ -30,23 +31,7 @@ let ContractManager = class ContractManager {
                     abi = abis_1.default[type] || null;
                 }
                 if (abi && network.web3) {
-                    const web3Contract = network.web3.eth.contract(abi).at(address);
-                    const contract = {
-                        id,
-                        web3Contract,
-                        call: (methodName, ...args) => new Promise((resolve, reject) => {
-                            web3Contract[methodName](...args, (err, ...data) => {
-                                if (err) {
-                                    reject(err);
-                                }
-                                else {
-                                    resolve(data);
-                                }
-                            });
-                        }),
-                        getData: (methodName, ...args) => web3Contract[methodName].getData(...args),
-                    };
-                    this.contracts.set(id, contract);
+                    this.contracts.set(id, new model_1.ContractModel(network.web3, address, abi));
                 }
             }
         }
@@ -54,7 +39,7 @@ let ContractManager = class ContractManager {
     /**
      * gets contract
      * @param {string} id
-     * @returns {IContract}
+     * @returns {IContractModel}
      */
     get(id) {
         return this.contracts.get(id || constants_1.DEFAULT_ID) || null;

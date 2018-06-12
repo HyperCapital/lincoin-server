@@ -41,11 +41,7 @@ let ContractHandler = class ContractHandler {
                 const id = options.id || constants_1.DEFAULT_ID;
                 const contract = contractManager.get(id);
                 if (contract) {
-                    const filter = handler && handler.filter;
-                    const additionalFilter = handler && handler.additionalFilter;
-                    contract.web3Contract.allEvents(filter || null, additionalFilter || {
-                        fromBlock: "latest",
-                    }, (err, log) => {
+                    contract.watch(handler && handler.filter, handler && handler.additionalFilter, (err, log) => {
                         if (err) {
                             logger.error("contract.event", {
                                 id,

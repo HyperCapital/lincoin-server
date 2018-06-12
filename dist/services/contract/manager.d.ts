@@ -2,9 +2,9 @@
 import { LoggerInstance } from "winston";
 import { IConfig } from "../../config";
 import { INetwork } from "../network";
-import { IContract } from "./interfaces";
+import { IContractModel } from "./model";
 export interface IContractManager {
-    get(id: string): IContract;
+    get(id?: string): IContractModel;
 }
 /**
  * Contract handler service
@@ -15,7 +15,7 @@ export declare class ContractManager implements IContractManager {
     /**
      * gets contract
      * @param {string} id
-     * @returns {IContract}
+     * @returns {IContractModel}
      */
-    get(id: string): IContract;
+    get(id?: string): IContractModel;
 }

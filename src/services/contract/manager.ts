@@ -3,11 +3,11 @@ import { LoggerInstance } from "winston";
 import { ConstantNames, ServiceNames, DEFAULT_ID } from "../../constants";
 import { IConfig } from "../../config";
 import { INetwork } from "../network";
-import { IContract } from "./interfaces";
+import { IContractModel, ContractModel } from "./model";
 import abis from "./abis";
 
 export interface IContractManager {
-  get(id: string): IContract;
+  get(id?: string): IContractModel;
 }
 
 /**
@@ -15,7 +15,7 @@ export interface IContractManager {
  */
 @injectable()
 export class ContractManager implements IContractManager {
-  private contracts = new Map<string, IContract>();
+  private contracts = new Map<string, IContractModel>();
 
   constructor(
     @inject(ConstantNames.Config) config: IConfig,
@@ -34,23 +34,7 @@ export class ContractManager implements IContractManager {
         }
 
         if (abi && network.web3) {
-          const web3Contract: any = network.web3.eth.contract(abi).at(address);
-          const contract: IContract = {
-            id,
-            web3Contract,
-            call: (methodName, ...args) => new Promise<any>((resolve, reject) => {
-              web3Contract[ methodName ](...args, (err, ...data) => {
-                if (err) {
-                  reject(err);
-                } else {
-                  resolve(data);
-                }
-              });
-            }),
-            getData: (methodName, ...args) => web3Contract[ methodName ].getData(...args),
-          };
-
-          this.contracts.set(id, contract);
+          this.contracts.set(id, new ContractModel(network.web3, address, abi));
         }
       }
     }
@@ -59,9 +43,9 @@ export class ContractManager implements IContractManager {
   /**
    * gets contract
    * @param {string} id
-   * @returns {IContract}
+   * @returns {IContractModel}
    */
-  public get(id: string): IContract {
+  public get(id?: string): IContractModel {
     return this.contracts.get(id || DEFAULT_ID) || null;
   }
 }
