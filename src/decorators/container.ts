@@ -11,6 +11,7 @@ export const injectLogger: TInject = () => inject(ConstantNames.Logger);
 export const injectApn: TInject = () => inject(ServiceNames.Apn);
 export const injectConnectionManager: TInject = () => inject(ServiceNames.ConnectionManager);
 export const injectSessionManager: TInject = () => inject(ServiceNames.SessionManager);
+export const injectNetwork: TInject = () => inject(ServiceNames.Network);
 
 export {
   injectable,

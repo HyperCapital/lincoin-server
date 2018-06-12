@@ -1,3 +1,5 @@
+/// <reference types="web3" />
+import * as Web3 from "web3";
 export interface IContractEventHandler<T = any> {
     type: string;
     property: string;
@@ -6,4 +8,10 @@ export interface IContractEventHandler<T = any> {
 export interface IContractController {
     contract: string;
     eventHandlers: IContractEventHandler[];
+}
+export interface IContract {
+    id: string;
+    web3Contract: Web3.IContract;
+    call(methodName: string, ...args: any[]): Promise<any[]>;
+    getData(methodName: string, ...args: any[]): string;
 }

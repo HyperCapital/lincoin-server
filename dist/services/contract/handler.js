@@ -22,12 +22,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const inversify_1 = require("inversify");
 const constants_1 = require("../../constants");
-const abis_1 = require("./abis");
 /**
  * Contract handler service
  */
 let ContractHandler = class ContractHandler {
-    constructor(config, logger, networkManager, controllers) {
+    constructor(config, logger, contractManager, controllers) {
         this.eventHandlers = {};
         for (const { contract, eventHandlers } of controllers) {
             const id = contract || constants_1.DEFAULT_ID;
@@ -38,51 +37,40 @@ let ContractHandler = class ContractHandler {
         }
         if (config.contracts) {
             for (const options of config.contracts) {
-                let { id, abi } = options;
-                const { type, addresses, filter, additionalFilter } = options;
-                if (!id) {
-                    id = constants_1.DEFAULT_ID;
-                }
-                if (!abi && type) {
-                    abi = abis_1.default[type] || null;
-                }
-                if (abi) {
-                    for (const { network, address } of addresses) {
-                        const web3 = networkManager.getWeb3(network);
-                        if (web3) {
-                            const contract = web3.eth.contract(abi).at(address);
-                            contract.allEvents(filter || null, additionalFilter || {
-                                fromBlock: "latest",
-                            }, (err, log) => {
-                                if (err) {
-                                    logger.error("contract.event", {
-                                        id,
-                                        network,
-                                    }, err);
-                                    return;
-                                }
-                                this
-                                    .eventHandler(id, network, log)
-                                    .catch((err) => {
-                                    logger.error("contract.eventHandler", {
-                                        id,
-                                        network,
-                                    }, err);
-                                });
-                            });
+                const { handler } = options;
+                const id = options.id || constants_1.DEFAULT_ID;
+                const contract = contractManager.get(id);
+                if (contract) {
+                    const filter = handler && handler.filter;
+                    const additionalFilter = handler && handler.additionalFilter;
+                    contract.web3Contract.allEvents(filter || null, additionalFilter || {
+                        fromBlock: "latest",
+                    }, (err, log) => {
+                        if (err) {
+                            logger.error("contract.event", {
+                                id,
+                            }, err);
+                            return;
                         }
-                    }
+                        this
+                            .eventHandler(id, log)
+                            .catch((err) => {
+                            logger.error("contract.eventHandler", {
+                                id,
+                            }, err);
+                        });
+                    });
                 }
             }
         }
     }
-    eventHandler(contract, network, log) {
+    eventHandler(contract, log) {
         return __awaiter(this, void 0, void 0, function* () {
             if (this.eventHandlers[contract]) {
                 const { event } = log;
                 for (const { type, handler } of this.eventHandlers[contract]) {
                     if (type === event) {
-                        const promise = handler(network, log);
+                        const promise = handler(log);
                         if (promise instanceof Promise) {
                             yield promise;
                         }
@@ -96,7 +84,7 @@ ContractHandler = __decorate([
     inversify_1.injectable(),
     __param(0, inversify_1.inject(constants_1.ConstantNames.Config)),
     __param(1, inversify_1.inject(constants_1.ConstantNames.Logger)),
-    __param(2, inversify_1.inject(constants_1.ServiceNames.NetworkManager)),
+    __param(2, inversify_1.inject(constants_1.ServiceNames.ContractManager)),
     __param(3, inversify_1.multiInject(constants_1.ServiceNames.ContractController)), __param(3, inversify_1.optional()),
     __metadata("design:paramtypes", [Object, Object, Object, Array])
 ], ContractHandler);
