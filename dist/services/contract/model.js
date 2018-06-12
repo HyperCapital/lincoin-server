@@ -1,25 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 class ContractModel {
-    constructor(web3, address, abi) {
-        this.web3 = web3;
+    constructor(network, address, abi) {
         this.address = address;
-        this.contract = web3.eth.contract(abi).at(address);
-    }
-    getBalance() {
-        return new Promise((resolve, reject) => {
-            this.web3.eth.getBalance(this.address, (err, result) => {
-                if (err) {
-                    reject(err);
-                }
-                else {
-                    resolve(result);
-                }
-            });
-        });
+        this.contract = network.web3.eth.contract(abi).at(address);
     }
     getData(method, ...args) {
         return this.contract[method].getData(...args);
+    }
+    estimateGas(method, ...args) {
+        return this.contract[method].estimateGas(...args);
     }
     call(method, ...args) {
         return new Promise((resolve, reject) => {

@@ -1,20 +1,20 @@
 /// <reference types="web3" />
 import * as Web3 from "web3";
+import { INetwork } from "../network";
 import { BigNumber } from "bignumber.js";
 export interface IContractModel {
     address: string;
-    getBalance(): Promise<BigNumber>;
     getData(method: string, ...args: any[]): string;
+    estimateGas(method: string, ...args: any[]): BigNumber;
     call(method: string, ...args: any[]): Promise<any>;
     watch(filter: any, additionalFilter: any, callback: (err: any, log: any) => void): any;
 }
 export declare class ContractModel implements IContractModel {
-    private web3;
     address: string;
     private readonly contract;
-    constructor(web3: Web3.IWeb3, address: string, abi: Web3.TAbi);
-    getBalance(): Promise<BigNumber>;
+    constructor(network: INetwork, address: string, abi: Web3.TAbi);
     getData(method: string, ...args: any[]): string;
+    estimateGas(method: string, ...args: any[]): BigNumber;
     call(method: string, ...args: any[]): Promise<any>;
     watch(filter: any, additionalFilter: any, callback: (err: any, log: any) => void): void;
 }

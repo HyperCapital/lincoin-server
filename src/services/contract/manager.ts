@@ -34,7 +34,7 @@ export class ContractManager implements IContractManager {
         }
 
         if (abi && network.web3) {
-          this.contracts.set(id, new ContractModel(network.web3, address, abi));
+          this.contracts.set(id, new ContractModel(network, address, abi));
         }
       }
     }

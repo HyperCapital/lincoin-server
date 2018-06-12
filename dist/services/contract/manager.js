@@ -31,7 +31,7 @@ let ContractManager = class ContractManager {
                     abi = abis_1.default[type] || null;
                 }
                 if (abi && network.web3) {
-                    this.contracts.set(id, new model_1.ContractModel(network.web3, address, abi));
+                    this.contracts.set(id, new model_1.ContractModel(network, address, abi));
                 }
             }
         }

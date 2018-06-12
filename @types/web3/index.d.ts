@@ -1,4 +1,6 @@
 declare module "web3" {
+  import BigNumber from "bignumber.js";
+
   const Web3: {
     new(provider?: Web3.IProvider): Web3.IWeb3;
   };
@@ -39,6 +41,7 @@ declare module "web3" {
       [ key: string ]: {
         (...args: any[]): void;
         getData(...args): string;
+        estimateGas(...args): BigNumber;
       };
     }
 
