@@ -3,6 +3,7 @@ import * as Web3 from "web3";
 import { INetwork } from "../network";
 import { BigNumber } from "bignumber.js";
 export interface IContractModel {
+    contract: Web3.IContract;
     address: string;
     getData(method: string, ...args: any[]): string;
     estimateGas(method: string, ...args: any[]): BigNumber;
@@ -11,7 +12,7 @@ export interface IContractModel {
 }
 export declare class ContractModel implements IContractModel {
     address: string;
-    private readonly contract;
+    readonly contract: Web3.IContract;
     constructor(network: INetwork, address: string, abi: Web3.TAbi);
     getData(method: string, ...args: any[]): string;
     estimateGas(method: string, ...args: any[]): BigNumber;
