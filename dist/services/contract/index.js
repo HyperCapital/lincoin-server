@@ -6,3 +6,4 @@ Object.defineProperty(exports, "__esModule", { value: true });
 __export(require("./constants"));
 __export(require("./handler"));
 __export(require("./manager"));
+__export(require("./model"));
