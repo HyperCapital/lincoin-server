@@ -1,5 +1,3 @@
-/// <reference types="winston" />
-import { LoggerInstance } from "winston";
 import { IConfig } from "../../config";
 import { INetwork } from "../network";
 import { IContractModel } from "./model";
@@ -10,12 +8,20 @@ export interface IContractManager {
  * Contract handler service
  */
 export declare class ContractManager implements IContractManager {
+    private network;
     private contracts;
-    constructor(config: IConfig, logger: LoggerInstance, network: INetwork);
+    constructor(config: IConfig, network: INetwork);
     /**
      * gets contract
      * @param {string} id
      * @returns {IContractModel}
      */
     get(id?: string): IContractModel;
+    /**
+     * creates contract
+     * @param {string} address
+     * @param {any} abi
+     * @returns {IContractModel}
+     */
+    create(address: string, abi: any): IContractModel;
 }

@@ -14,6 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const http_1 = require("http");
 const express = require("express");
+const bodyParser = require("body-parser");
 const statuses = require("statuses");
 const inversify_1 = require("inversify");
 const constants_1 = require("../../constants");
@@ -30,6 +31,18 @@ let RequestHandler = class RequestHandler {
             .enable("trust proxy")
             .disable("x-powered-by");
         app
+            .use(bodyParser.json({
+            reviver: (key, value) => {
+                if (value && typeof value === "object") {
+                    switch (value.type) {
+                        case "Buffer":
+                            value = Buffer.from(value.data);
+                            break;
+                    }
+                }
+                return value;
+            },
+        }))
             .use(this.middleware.bind(this))
             .use(this.router)
             .use(this.status404Handler.bind(this))

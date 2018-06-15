@@ -20,7 +20,8 @@ const abis_1 = require("./abis");
  * Contract handler service
  */
 let ContractManager = class ContractManager {
-    constructor(config, logger, network) {
+    constructor(config, network) {
+        this.network = network;
         this.contracts = new Map();
         if (config.contracts) {
             for (const options of config.contracts) {
@@ -31,7 +32,7 @@ let ContractManager = class ContractManager {
                     abi = abis_1.default[type] || null;
                 }
                 if (abi && network.web3) {
-                    this.contracts.set(id, new model_1.ContractModel(network, address, abi));
+                    this.contracts.set(id, this.create(address, abi));
                 }
             }
         }
@@ -44,12 +45,20 @@ let ContractManager = class ContractManager {
     get(id) {
         return this.contracts.get(id || constants_1.DEFAULT_ID) || null;
     }
+    /**
+     * creates contract
+     * @param {string} address
+     * @param {any} abi
+     * @returns {IContractModel}
+     */
+    create(address, abi) {
+        return new model_1.ContractModel(this.network, address, abi);
+    }
 };
 ContractManager = __decorate([
     inversify_1.injectable(),
     __param(0, inversify_1.inject(constants_1.ConstantNames.Config)),
-    __param(1, inversify_1.inject(constants_1.ConstantNames.Logger)),
-    __param(2, inversify_1.inject(constants_1.ServiceNames.Network)),
-    __metadata("design:paramtypes", [Object, Object, Object])
+    __param(1, inversify_1.inject(constants_1.ServiceNames.Network)),
+    __metadata("design:paramtypes", [Object, Object])
 ], ContractManager);
 exports.ContractManager = ContractManager;
