@@ -1,5 +1,4 @@
 import { injectable, inject } from "inversify";
-import { LoggerInstance } from "winston";
 import { ConstantNames, ServiceNames, DEFAULT_ID } from "../../constants";
 import { IConfig } from "../../config";
 import { INetwork } from "../network";
@@ -19,8 +18,7 @@ export class ContractManager implements IContractManager {
 
   constructor(
     @inject(ConstantNames.Config) config: IConfig,
-    @inject(ConstantNames.Logger) logger: LoggerInstance,
-    @inject(ServiceNames.Network) network: INetwork,
+    @inject(ServiceNames.Network) private network: INetwork,
   ) {
 
     if (config.contracts) {
@@ -34,7 +32,7 @@ export class ContractManager implements IContractManager {
         }
 
         if (abi && network.web3) {
-          this.contracts.set(id, new ContractModel(network, address, abi));
+          this.contracts.set(id, this.create(address, abi));
         }
       }
     }
@@ -47,5 +45,15 @@ export class ContractManager implements IContractManager {
    */
   public get(id?: string): IContractModel {
     return this.contracts.get(id || DEFAULT_ID) || null;
+  }
+
+  /**
+   * creates contract
+   * @param {string} address
+   * @param {any} abi
+   * @returns {IContractModel}
+   */
+  public create(address: string, abi: any): IContractModel {
+    return new ContractModel(this.network, address, abi);
   }
 }

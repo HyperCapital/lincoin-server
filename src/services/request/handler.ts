@@ -1,5 +1,6 @@
 import { Server } from "http";
 import * as express from "express";
+import * as bodyParser from "body-parser";
 import * as statuses from "statuses";
 import { LoggerInstance } from "winston";
 import { inject, injectable, multiInject, optional } from "inversify";
@@ -25,6 +26,18 @@ export class RequestHandler {
       .disable("x-powered-by");
 
     app
+      .use(bodyParser.json({
+        reviver: (key: any, value: any) => {
+          if (value && typeof value === "object") {
+            switch (value.type) {
+              case "Buffer":
+                value = Buffer.from(value.data);
+                break;
+            }
+          }
+          return value;
+        },
+      }))
       .use(this.middleware.bind(this))
       .use(this.router)
       .use(this.status404Handler.bind(this))
